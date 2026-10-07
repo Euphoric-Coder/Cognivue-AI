@@ -1,0 +1,8 @@
+fastapi
+uvicorn
+pymupdf
+python-pptx
+pydantic
+python-multipart
+tiktoken
+pydantic_settings

@@ -33,7 +33,20 @@ export default defineSchema({
     type: v.string(),
     mimeType: v.string(),
     size: v.number(),
-    status: v.string(), // "uploaded", "processing", "ready", "failed"
+    status: v.string(), // "uploaded", "queued", "extracting", "normalizing", "chunking", "ready", "failed"
+    
+    // New Processing Fields
+    processingStage: v.optional(v.string()),
+    processingProgress: v.optional(v.number()),
+    processingError: v.optional(v.string()),
+    
+    pageCount: v.optional(v.number()),
+    slideCount: v.optional(v.number()),
+    chunkCount: v.optional(v.number()),
+    
+    processedAt: v.optional(v.number()),
+    retryCount: v.optional(v.number()),
+    
     fileUrl: v.optional(v.string()),
     storageId: v.optional(v.string()),
     metadata: v.optional(v.any()),
@@ -42,4 +55,29 @@ export default defineSchema({
   })
     .index("by_course", ["courseId"])
     .index("by_user", ["userId"]),
+
+  sourceChunks: defineTable({
+    userId: v.id("users"),
+    courseId: v.id("courses"),
+    sourceId: v.id("sources"),
+
+    text: v.string(),
+
+    locationType: v.string(), // "page" or "slide"
+    pageNumber: v.optional(v.number()),
+    slideNumber: v.optional(v.number()),
+
+    sectionTitle: v.optional(v.string()),
+    headingPath: v.optional(v.array(v.string())),
+
+    chunkIndex: v.number(),
+
+    tokenEstimate: v.optional(v.number()),
+    characterCount: v.number(),
+
+    createdAt: v.number(),
+  })
+    .index("by_source", ["sourceId"])
+    .index("by_course", ["courseId"])
+    .index("by_course_source", ["courseId", "sourceId"]),
 });

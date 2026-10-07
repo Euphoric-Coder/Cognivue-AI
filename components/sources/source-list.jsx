@@ -26,11 +26,10 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { EditSourceDialog } from "@/components/sources/edit-source-dialog";
-import { ViewSourceDialog } from "@/components/sources/view-source-dialog";
+import Link from "next/link";
 
 export function SourceList({ courseId }) {
   const [editingSource, setEditingSource] = useState(null);
-  const [viewingSource, setViewingSource] = useState(null);
   const sources = useQuery(api.sources.getCourseSources, { courseId });
   const deleteSource = useMutation(api.sources.deleteSource);
 
@@ -102,14 +101,27 @@ export function SourceList({ courseId }) {
               <TableCell className="uppercase text-xs">{source.type}</TableCell>
               <TableCell className="text-muted-foreground">{formatSize(source.size)}</TableCell>
               <TableCell>
-                <Badge variant="outline" className={
-                  source.status === 'ready' ? 'border-green-500 text-green-600' :
-                  source.status === 'processing' ? 'border-blue-500 text-blue-600' :
-                  source.status === 'failed' ? 'border-red-500 text-red-600' :
-                  'border-muted-foreground/30 text-muted-foreground'
-                }>
-                  {source.status}
-                </Badge>
+                <div className="flex flex-col gap-1">
+                  <Badge variant="outline" className={
+                    source.status === 'ready' ? 'border-green-500 text-green-600' :
+                    ['queued', 'extracting', 'normalizing', 'chunking'].includes(source.status) ? 'border-blue-500 text-blue-600' :
+                    source.status === 'failed' ? 'border-red-500 text-red-600' :
+                    'border-muted-foreground/30 text-muted-foreground'
+                  }>
+                    {source.status === 'failed' && source.processingError === 'Needs OCR' ? 'Needs OCR' : source.status}
+                  </Badge>
+                  {['queued', 'extracting', 'normalizing', 'chunking'].includes(source.status) && (
+                    <div className="text-[10px] text-muted-foreground flex items-center justify-between mt-1">
+                      <span className="truncate max-w-[80px]">{source.processingStage || source.status}</span>
+                      <span>{source.processingProgress || 0}%</span>
+                    </div>
+                  )}
+                  {source.status === 'ready' && source.chunkCount > 0 && (
+                     <div className="text-[10px] text-muted-foreground mt-1">
+                       {source.pageCount || source.slideCount || 0} {source.type === 'pdf' ? 'pages' : 'slides'} • {source.chunkCount} chunks
+                     </div>
+                  )}
+                </div>
               </TableCell>
               <TableCell className="text-muted-foreground whitespace-nowrap">
                 {formatDistanceToNow(source.createdAt, { addSuffix: true })}
@@ -123,8 +135,10 @@ export function SourceList({ courseId }) {
                   <DropdownMenuContent align="end">
                     <DropdownMenuGroup>
                       <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                      <DropdownMenuItem onClick={() => setViewingSource(source)}>
-                        View details
+                      <DropdownMenuItem asChild>
+                        <Link href={`/dashboard/courses/${courseId}/sources/${source._id}`}>
+                          View details
+                        </Link>
                       </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => setEditingSource(source)}>
                         <Edit2 className="mr-2 h-4 w-4" />
@@ -151,12 +165,6 @@ export function SourceList({ courseId }) {
         source={editingSource} 
         open={!!editingSource} 
         onOpenChange={(open) => !open && setEditingSource(null)} 
-      />
-      
-      <ViewSourceDialog 
-        source={viewingSource} 
-        open={!!viewingSource} 
-        onOpenChange={(open) => !open && setViewingSource(null)} 
       />
     </div>
   );

@@ -79,7 +79,7 @@ export const createSource = mutation({
       updatedAt: Date.now(),
     });
     
-    return sourceId;
+    return { sourceId, fileUrl };
   },
 });
 
@@ -112,6 +112,72 @@ export const updateSource = mutation({
     
     await ctx.db.patch(args.sourceId, {
       name: args.name,
+      updatedAt: Date.now(),
+    });
+  },
+});
+
+export const getSource = query({
+  args: { sourceId: v.id("sources") },
+  handler: async (ctx, args) => {
+    const user = await requireUser(ctx);
+    const source = await ctx.db.get(args.sourceId);
+    
+    if (!source || source.userId !== user._id) return null;
+    
+    return source;
+  },
+});
+
+export const getSourceChunks = query({
+  args: { sourceId: v.id("sources") },
+  handler: async (ctx, args) => {
+    const user = await requireUser(ctx);
+    const source = await ctx.db.get(args.sourceId);
+    
+    if (!source || source.userId !== user._id) return [];
+    
+    const chunks = await ctx.db
+      .query("sourceChunks")
+      .withIndex("by_source", (q) => q.eq("sourceId", args.sourceId))
+      .collect();
+      
+    // Sort chunks logically
+    return chunks.sort((a, b) => {
+      const numA = a.pageNumber || a.slideNumber || 0;
+      const numB = b.pageNumber || b.slideNumber || 0;
+      if (numA !== numB) return numA - numB;
+      return a.chunkIndex - b.chunkIndex;
+    });
+  },
+});
+
+import { internalQuery, internalMutation } from "./_generated/server";
+export const getAllSourcesDebug = internalQuery({
+  args: {},
+  handler: async (ctx) => {
+    return await ctx.db.query("sources").collect();
+  },
+});
+
+export const createSourceDebug = internalMutation({
+  args: {
+    courseId: v.id("courses")
+  },
+  handler: async (ctx, args) => {
+    const course = await ctx.db.get(args.courseId);
+    if (!course) throw new Error("Course not found");
+    return await ctx.db.insert("sources", {
+      courseId: args.courseId,
+      userId: course.userId,
+      name: "Auto-Test Source",
+      originalFileName: "test_pipeline.pdf",
+      type: "pdf",
+      mimeType: "application/pdf",
+      size: 1024,
+      status: "uploaded",
+      fileUrl: "https://raw.githubusercontent.com/w3c/web-platform-tests/master/pdf/test-pdf-1.pdf",
+      createdAt: Date.now(),
       updatedAt: Date.now(),
     });
   },

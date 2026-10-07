@@ -3,6 +3,7 @@
 import { useState, useRef } from "react";
 import { useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
+import { useAuth } from "@clerk/nextjs";
 import { UploadCloud, FileType2, Loader2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -12,6 +13,7 @@ export function SourceUploader({ courseId }) {
   const [isDragging, setIsDragging] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
+  const { getToken, userId } = useAuth();
   
   const generateUploadUrl = useMutation(api.sources.generateUploadUrl);
   const createSource = useMutation(api.sources.createSource);
@@ -84,7 +86,7 @@ export function SourceUploader({ courseId }) {
         else if (file.type.includes("document") || file.type.includes("text")) type = "document";
 
         // Save metadata to Convex DB
-        await createSource({
+        const { sourceId, fileUrl } = await createSource({
           courseId,
           name: file.name,
           originalFileName: file.name,
@@ -96,6 +98,33 @@ export function SourceUploader({ courseId }) {
         
         setProgress(100);
         toast.success(`${file.name} uploaded successfully`);
+
+        // Trigger backend processing if supported
+        if (type === "pdf" || type === "pptx") {
+          toast("Starting processing pipeline...", {
+            description: `${file.name} has been queued for ingestion.`
+          });
+          
+          const token = await getToken();
+          
+          fetch("/api/ingestion/trigger", {
+            method: "POST",
+            headers: { 
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${token}`
+            },
+            body: JSON.stringify({
+              sourceId,
+              courseId,
+              userId,
+              fileUrl,
+              mimeType: file.type || "application/octet-stream",
+              originalFileName: file.name
+            })
+          }).catch(err => console.error("Failed to trigger ingestion:", err));
+        } else {
+          toast.info(`${file.name} cannot be processed yet. Processing support coming in a later version.`);
+        }
       }
     } catch (error) {
       console.error(error);

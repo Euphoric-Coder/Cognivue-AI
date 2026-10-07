@@ -27,6 +27,8 @@ export default function CourseOverviewPage({ params }) {
   }
 
   const hasSources = sources.length > 0;
+  const processedSourcesCount = sources.filter(s => s.status === 'ready').length;
+  const totalChunks = sources.reduce((acc, s) => acc + (s.chunkCount || 0), 0);
 
   return (
     <div className="space-y-8 max-w-5xl mx-auto">
@@ -51,36 +53,36 @@ export default function CourseOverviewPage({ params }) {
           </CardContent>
         </Card>
         
-        <Card className="opacity-80">
+        <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Concepts</CardTitle>
+            <CardTitle className="text-sm font-medium">Processed Sources</CardTitle>
             <Network className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">—</div>
-            <p className="text-xs text-muted-foreground">Available after knowledge processing</p>
+            <div className="text-2xl font-bold">{processedSourcesCount}</div>
+            <p className="text-xs text-muted-foreground">Successfully ingested</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Extracted Chunks</CardTitle>
+            <Target className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{totalChunks}</div>
+            <p className="text-xs text-muted-foreground">Ready for knowledge base</p>
           </CardContent>
         </Card>
 
         <Card className="opacity-80">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Mastery</CardTitle>
-            <Target className="h-4 w-4 text-muted-foreground" />
+            <MessageSquare className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">—</div>
             <p className="text-xs text-muted-foreground">Available after assessments</p>
-          </CardContent>
-        </Card>
-
-        <Card className="opacity-80">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Tutor Sessions</CardTitle>
-            <MessageSquare className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">0</div>
-            <p className="text-xs text-muted-foreground">No sessions yet</p>
           </CardContent>
         </Card>
       </div>
@@ -116,11 +118,23 @@ export default function CourseOverviewPage({ params }) {
               </div>
             </div>
 
+            <div className="flex items-start gap-3">
+              {processedSourcesCount > 0 ? (
+                <CheckCircle2 className="w-5 h-5 text-primary shrink-0" />
+              ) : (
+                <Circle className="w-5 h-5 text-muted-foreground shrink-0" />
+              )}
+              <div className="space-y-1">
+                <p className="text-sm font-medium leading-none">Process first source</p>
+                <p className="text-sm text-muted-foreground">Extract text and chunks from a document.</p>
+              </div>
+            </div>
+
             <div className="flex items-start gap-3 opacity-60">
               <Circle className="w-5 h-5 text-muted-foreground shrink-0" />
               <div className="space-y-1">
                 <p className="text-sm font-medium leading-none">Build knowledge base</p>
-                <p className="text-sm text-muted-foreground">Coming in V0.2 processing pipeline.</p>
+                <p className="text-sm text-muted-foreground">Coming in V3.</p>
               </div>
             </div>
 
