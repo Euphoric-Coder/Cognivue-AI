@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
+import { formatSlideNumber } from "@/lib/utils";
 
 export default function SourceDetailsPage() {
   const params = useParams();
@@ -61,7 +62,7 @@ export default function SourceDetailsPage() {
   // Group chunks by location (page or slide)
   const locChunks = {};
   chunks.forEach(chunk => {
-    const loc = chunk.pageNumber || chunk.slideNumber || "Unknown";
+    const loc = chunk.pageNumber || formatSlideNumber(chunk.slideNumber) || "Unknown";
     if (!locChunks[loc]) locChunks[loc] = [];
     locChunks[loc].push(chunk);
   });

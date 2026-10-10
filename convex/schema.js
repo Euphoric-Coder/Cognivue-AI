@@ -40,6 +40,9 @@ export default defineSchema({
     processingProgress: v.optional(v.number()),
     processingError: v.optional(v.string()),
     
+    // RAG Status
+    ragStatus: v.optional(v.string()), // "not_available", "pending", "embedding", "ready", "failed"
+    
     pageCount: v.optional(v.number()),
     slideCount: v.optional(v.number()),
     chunkCount: v.optional(v.number()),
@@ -75,9 +78,50 @@ export default defineSchema({
     tokenEstimate: v.optional(v.number()),
     characterCount: v.number(),
 
+    embedding: v.optional(v.array(v.float64())),
+
     createdAt: v.number(),
   })
     .index("by_source", ["sourceId"])
     .index("by_course", ["courseId"])
-    .index("by_course_source", ["courseId", "sourceId"]),
+    .index("by_course_source", ["courseId", "sourceId"])
+    .vectorIndex("by_embedding", {
+      vectorField: "embedding",
+      dimensions: 3072, // Gemini gemini-embedding-2
+      filterFields: ["courseId", "sourceId"],
+    }),
+
+  tutorSessions: defineTable({
+    userId: v.id("users"),
+    courseId: v.id("courses"),
+    title: v.optional(v.string()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_course", ["courseId"])
+    .index("by_user", ["userId"])
+    .index("by_user_course", ["userId", "courseId"]),
+
+  tutorMessages: defineTable({
+    sessionId: v.id("tutorSessions"),
+    userId: v.id("users"),
+    courseId: v.id("courses"),
+    role: v.string(), // "user" or "assistant"
+    content: v.string(),
+    grounded: v.optional(v.boolean()),
+    retrievalStatus: v.optional(v.string()),
+    citations: v.optional(v.array(v.object({
+      sourceId: v.string(),
+      sourceChunkId: v.string(),
+      sourceName: v.string(),
+      locationType: v.string(),
+      pageNumber: v.optional(v.number()),
+      slideNumber: v.optional(v.number()),
+      sectionTitle: v.optional(v.string()),
+      excerpt: v.optional(v.string())
+    }))),
+    createdAt: v.number(),
+  })
+    .index("by_session", ["sessionId"])
+    .index("by_course", ["courseId"]),
 });

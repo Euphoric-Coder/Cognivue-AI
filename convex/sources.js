@@ -86,16 +86,35 @@ export const createSource = mutation({
 export const deleteSource = mutation({
   args: { sourceId: v.id("sources") },
   handler: async (ctx, args) => {
+    console.log(`SOURCE_DELETE_START: sourceId=${args.sourceId}`);
     const user = await requireUser(ctx);
     const source = await ctx.db.get(args.sourceId);
     
     if (!source || source.userId !== user._id) throw new Error("Unauthorized");
     
+    // 1. Cascade delete sourceChunks
+    const chunks = await ctx.db
+      .query("sourceChunks")
+      .withIndex("by_source", (q) => q.eq("sourceId", args.sourceId))
+      .collect();
+      
+    let chunksDeleted = 0;
+    for (const chunk of chunks) {
+      await ctx.db.delete(chunk._id);
+      chunksDeleted++;
+    }
+    console.log(`SOURCE_CHUNKS_DELETE_COMPLETE: sourceId=${args.sourceId}, count=${chunksDeleted}`);
+    console.log(`SOURCE_VECTORS_DELETE_COMPLETE: implicitly handled via sourceChunks`);
+    
+    // 2. Delete storage
     if (source.storageId) {
       await ctx.storage.delete(source.storageId);
+      console.log(`SOURCE_STORAGE_DELETE_COMPLETE`);
     }
     
+    // 3. Delete source record
     await ctx.db.delete(args.sourceId);
+    console.log(`SOURCE_DELETE_COMPLETE: sourceId=${args.sourceId}, chunksDeleted=${chunksDeleted}, storageDeleted=${!!source.storageId}`);
   },
 });
 

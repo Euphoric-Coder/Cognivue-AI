@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 def update_convex_status(source_id: str, status: str, processing_stage: str = None, 
                          processing_progress: int = None, processing_error: str = None,
                          page_count: int = None, slide_count: int = None):
-    url = f"{settings.convex_url}/ingestion/status"
+    url = f"{settings.convex_site_url}/ingestion/status"
     headers = {"x-ingestion-secret": settings.ingestion_api_secret}
     payload = {
         "sourceId": source_id,
@@ -34,7 +34,7 @@ def update_convex_status(source_id: str, status: str, processing_stage: str = No
         logger.error(f"Failed to update convex status: {e}")
 
 def save_chunks_to_convex(source_id: str, chunks: list):
-    url = f"{settings.convex_url}/ingestion/chunks"
+    url = f"{settings.convex_site_url}/ingestion/chunks"
     headers = {"x-ingestion-secret": settings.ingestion_api_secret}
     payload = {
         "sourceId": source_id,
@@ -106,6 +106,13 @@ def process_source(req: IngestionRequest):
             slide_count=slide_count
         )
         logger.info(f"Finished processing source {req.sourceId}")
+
+        try:
+            from app.services.rag.rag_service import RAGService
+            rag_service = RAGService()
+            rag_service.embed_source(req.sourceId, req.courseId)
+        except Exception as e:
+            logger.error(f"Failed to index source for AI: {e}")
 
     except Exception as e:
         logger.error(f"Processing failed for source {req.sourceId}: {str(e)}")

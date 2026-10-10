@@ -6,3 +6,5 @@ pydantic
 python-multipart
 tiktoken
 pydantic_settings
+convex
+google-genai

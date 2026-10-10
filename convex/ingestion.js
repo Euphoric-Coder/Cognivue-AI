@@ -1,4 +1,4 @@
-import { mutation, internalMutation } from "./_generated/server";
+import { mutation, internalMutation, query } from "./_generated/server";
 import { v } from "convex/values";
 
 export const updateStatus = mutation({
@@ -27,6 +27,30 @@ export const updateStatus = mutation({
       processedAt: args.status === "ready" ? Date.now() : source.processedAt,
     });
   },
+});
+
+export const updateRagStatus = mutation({
+  args: {
+    sourceId: v.id("sources"),
+    ragStatus: v.string(),
+  },
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.sourceId, {
+      ragStatus: args.ragStatus,
+      updatedAt: Date.now(),
+    });
+  },
+});
+
+export const getChunksForEmbedding = query({
+  args: { sourceId: v.id("sources") },
+  handler: async (ctx, args) => {
+    const chunks = await ctx.db
+      .query("sourceChunks")
+      .withIndex("by_source", (q) => q.eq("sourceId", args.sourceId))
+      .collect();
+    return chunks;
+  }
 });
 
 export const saveChunks = mutation({

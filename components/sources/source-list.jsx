@@ -118,7 +118,15 @@ export function SourceList({ courseId }) {
                   )}
                   {source.status === 'ready' && source.chunkCount > 0 && (
                      <div className="text-[10px] text-muted-foreground mt-1">
-                       {source.pageCount || source.slideCount || 0} {source.type === 'pdf' ? 'pages' : 'slides'} • {source.chunkCount} chunks
+                       <div>{source.pageCount || source.slideCount || 0} {source.type === 'pdf' ? 'pages' : 'slides'} • {source.chunkCount} chunks</div>
+                       <div className="mt-1 font-medium flex items-center gap-1">
+                         <span>AI Search:</span>
+                         <span className={
+                           source.ragStatus === 'ready' ? 'text-green-500' :
+                           source.ragStatus === 'embedding' ? 'text-blue-500' :
+                           source.ragStatus === 'failed' ? 'text-red-500' : 'text-muted-foreground'
+                         }>{source.ragStatus === 'ready' ? 'Ready' : source.ragStatus === 'embedding' ? 'Embedding...' : source.ragStatus === 'failed' ? 'Failed' : 'Pending'}</span>
+                       </div>
                      </div>
                   )}
                 </div>
