@@ -54,8 +54,16 @@ class RAGService:
                         "embedding": emb
                     })
                     
-            self.update_rag_status(source_id, "ready")
-            logger.info(f"Finished embedding source {source_id}")
+            # Verification Step
+            updated_chunks = self.convex_client.query("ingestion:getChunksForEmbedding", {"sourceId": source_id})
+            embedded_count = sum(1 for c in updated_chunks if c.get("embedding") is not None)
+            
+            if embedded_count == len(chunks):
+                self.update_rag_status(source_id, "ready")
+                logger.info(f"Finished embedding source {source_id}")
+            else:
+                logger.error(f"Embedding validation failed for {source_id}: {embedded_count}/{len(chunks)} embedded.")
+                self.update_rag_status(source_id, "failed")
             
         except Exception as e:
             logger.error(f"Failed to embed source {source_id}: {e}")
@@ -65,10 +73,9 @@ class RAGService:
         """Handles a tutor question end-to-end."""
         logger.info(f"Asking tutor: '{question}' for course {course_id}")
         
+        logger.info(f"RAG_QUERY_START\nquery=\"{question}\"")
+        
         # 1. Get history
-        # (Assuming the client doesn't need to pass a token if we use the backend API key or client secret,
-        # but convex python client can't bypass auth easily if requireUser is used.
-        # Wait, getMessages might require auth! Let's bypass auth for backend queries.)
         try:
             history = self.convex_client.query("tutor:getMessagesBackend", {"sessionId": session_id})
         except Exception as e:
@@ -97,6 +104,28 @@ class RAGService:
             logger.error(f"Retrieval error: {e}")
             return {"answer": "Error searching course material.", "grounded": False, "citations": [], "retrievalStatus": "failed"}
 
+        log_candidates = "RAG_VECTOR_CANDIDATES\n\n"
+        visual_candidates_count = 0
+        for i, c in enumerate(retrieved):
+            ev_type = c.get("evidenceType", "text")
+            if ev_type == "visual":
+                visual_candidates_count += 1
+            log_candidates += f"{i+1}.\n"
+            log_candidates += f"chunkId={c.get('_id')}\n"
+            log_candidates += f"sourceId={c.get('sourceId')}\n"
+            log_candidates += f"evidenceType={ev_type}\n"
+            if c.get("visualType"):
+                log_candidates += f"visualType={c.get('visualType')}\n"
+            if c.get("locationType") == "video":
+                log_candidates += "locationType=video\n"
+                log_candidates += f"startTime={c.get('startTime')}\n"
+                log_candidates += f"endTime={c.get('endTime')}\n"
+            log_candidates += f"score={c.get('_score')}\n\n"
+        logger.info(log_candidates.strip())
+        logger.info(f"RAG_VISUAL_CANDIDATES\nvisualCandidatesCount={visual_candidates_count}\ntotalCandidates={len(retrieved)}")
+        
+        logger.info("RAG_POST_FILTER_RESULTS\n(No post-filtering applied)")
+
         if not retrieved:
             return {
                 "answer": "I couldn't find enough information about this in the materials uploaded for this course.",
@@ -107,6 +136,24 @@ class RAGService:
 
         # 4. Generate Answer
         top_chunks = retrieved[:settings.rag_final_context_count]
+        logger.info(f"RAG_MULTIMODAL_FINAL_CONTEXTS\ncontexts={len(top_chunks)}")
+
+        # 4B. Optional Graph-Aware Retrieval Context (1-Hop concept expansion)
+        try:
+            graph_data = self.convex_client.query("knowledgeGraph:getCourseKnowledgeGraph", {"courseId": course_id})
+            if graph_data and graph_data.get("concepts"):
+                q_lower = question.lower()
+                matched_concepts = [c for c in graph_data["concepts"] if c["name"].lower() in q_lower]
+                if matched_concepts:
+                    matched_ids = {c["_id"] for c in matched_concepts}
+                    connected_rel_names = []
+                    for r in graph_data.get("relationships", []):
+                        if r["fromConceptId"] in matched_ids or r["toConceptId"] in matched_ids:
+                            connected_rel_names.append(r.get("relationType", "RELATED_TO"))
+                    logger.info(f"RAG_GRAPH_AWARE_CONTEXT_ENRICHED: matchedConcepts={len(matched_concepts)}, relations={len(connected_rel_names)}")
+        except Exception as e:
+            logger.debug(f"Graph-aware retrieval check skipped: {e}")
+        
         answer, is_grounded, citation_ids = self.llm_service.generate_grounded_answer(question, top_chunks, formatted_history)
 
         # 5. Format citations
@@ -124,9 +171,25 @@ class RAGService:
                             "locationType": c.get("locationType", "page"),
                             "pageNumber": c.get("pageNumber"),
                             "slideNumber": c.get("slideNumber"),
-                            "sectionTitle": c.get("sectionTitle"),
+                            "startTime": c.get("startTime"),
+                            "endTime": c.get("endTime"),
+                            "evidenceType": c.get("evidenceType", "text"),
+                            "visualType": c.get("visualType"),
+                            "sourceVisualId": str(c["sourceVisualId"]) if c.get("sourceVisualId") else None,
+                            "imageUrl": c.get("imageUrl"),
+                            "confidenceNotes": c.get("confidenceNotes"),
+                            "sectionTitle": c.get("sectionTitle") or c.get("visualTitle"),
                             "excerpt": c["text"][:300] + "..." if len(c["text"]) > 300 else c["text"]
                         }
+                        
+                        if cit.get("locationType") == "video":
+                            start = cit.get("startTime")
+                            end = cit.get("endTime")
+                            video_duration = c.get("videoDuration")
+                            if start is None or end is None or video_duration is None or not (0 <= start < video_duration and 0 < end <= video_duration and start < end):
+                                logger.error(f"INVALID_VIDEO_CITATION_TIMESTAMP: start={start}, end={end}, duration={video_duration}")
+                                continue
+                                
                         citations.append({k: v for k, v in cit.items() if v is not None})
                 except Exception:
                     pass

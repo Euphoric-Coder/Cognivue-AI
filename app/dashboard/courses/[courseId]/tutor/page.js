@@ -15,7 +15,8 @@ import "katex/dist/katex.min.css";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import Link from "next/link";
-import { formatSlideNumber } from "@/lib/utils";
+import { useParams, useSearchParams } from "next/navigation";
+import { formatSlideNumber, formatTimestamp } from "@/lib/utils";
 
 export default function TutorPage({ params }) {
   const unwrappedParams = use(params);
@@ -25,14 +26,8 @@ export default function TutorPage({ params }) {
   const sessions = useQuery(api.tutor.getSessions, { courseId });
   const createSession = useMutation(api.tutor.createSession);
 
-  const [activeSessionId, setActiveSessionId] = useState(null);
-  
-  // Create first session if none exists and user starts typing
-  useEffect(() => {
-    if (sessions && sessions.length > 0 && !activeSessionId) {
-      setActiveSessionId(sessions[0]._id);
-    }
-  }, [sessions, activeSessionId]);
+  const [selectedSessionId, setSelectedSessionId] = useState(null);
+  const activeSessionId = selectedSessionId || (sessions && sessions.length > 0 ? sessions[0]._id : null);
 
   if (sources === undefined) {
     return <div className="p-8 flex justify-center"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>;
@@ -78,7 +73,7 @@ export default function TutorPage({ params }) {
           className="w-full justify-start mb-6"
           onClick={async () => {
             const newSessionId = await createSession({ courseId });
-            setActiveSessionId(newSessionId);
+            setSelectedSessionId(newSessionId);
           }}
         >
           <Plus className="mr-2 h-4 w-4" />
@@ -96,7 +91,7 @@ export default function TutorPage({ params }) {
                 key={s._id}
                 variant={activeSessionId === s._id ? "secondary" : "ghost"}
                 className="w-full justify-start font-normal text-sm px-2 truncate h-9"
-                onClick={() => setActiveSessionId(s._id)}
+                onClick={() => setSelectedSessionId(s._id)}
               >
                 <MessageSquare className="mr-2 h-3.5 w-3.5 opacity-50 shrink-0" />
                 <span className="truncate">{s.title || "New Chat"}</span>
@@ -115,7 +110,7 @@ export default function TutorPage({ params }) {
             <Button 
               onClick={async () => {
                 const newSessionId = await createSession({ courseId });
-                setActiveSessionId(newSessionId);
+                setSelectedSessionId(newSessionId);
               }}
             >
               Start Chatting
@@ -128,11 +123,19 @@ export default function TutorPage({ params }) {
 }
 
 function ChatArea({ courseId, sessionId }) {
+  const searchParams = useSearchParams();
+  const initialQ = searchParams?.get("initialQuestion");
   const messages = useQuery(api.tutor.getMessages, { sessionId });
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [loadingState, setLoadingState] = useState("");
   const messagesEndRef = useRef(null);
+
+  useEffect(() => {
+    if (initialQ) {
+      setInput(initialQ);
+    }
+  }, [initialQ]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -188,11 +191,11 @@ function ChatArea({ courseId, sessionId }) {
           <div className="h-full flex flex-col items-center justify-center text-center opacity-50">
             <MessageSquare className="h-10 w-10 mb-4" />
             <p className="font-medium">Ask something about your course...</p>
-            <p className="text-sm">Try asking "What are the main concepts?"</p>
+            <p className="text-sm">Try asking &quot;What are the main concepts?&quot;</p>
           </div>
         ) : (
           messages.map((msg, i) => (
-            <MessageBubble key={msg._id || i} message={msg} />
+            <MessageBubble key={msg._id || i} message={msg} courseId={courseId} />
           ))
         )}
         
@@ -239,10 +242,27 @@ function ChatArea({ courseId, sessionId }) {
   );
 }
 
-function MessageBubble({ message }) {
+function MessageBubble({ message, courseId }) {
+  const params = useParams();
+  const currentCourseId = courseId || params?.courseId;
   const isUser = message.role === "user";
   const [citationOpen, setCitationOpen] = useState(false);
   const [selectedCitation, setSelectedCitation] = useState(null);
+  
+  const selectedSource = useQuery(api.sources.getSource, selectedCitation ? { sourceId: selectedCitation.sourceId } : "skip");
+  const videoRef = useRef(null);
+
+  useEffect(() => {
+    if (citationOpen && selectedCitation?.locationType === 'video' && videoRef.current) {
+      const t = selectedCitation.startTime || 0;
+      if (videoRef.current.duration) {
+        videoRef.current.currentTime = Math.min(t, videoRef.current.duration);
+      } else {
+        videoRef.current.currentTime = t;
+      }
+      videoRef.current.play().catch(e => console.log("Auto-play prevented", e));
+    }
+  }, [citationOpen, selectedCitation]);
 
   if (isUser) {
     return (
@@ -275,22 +295,38 @@ function MessageBubble({ message }) {
             <span className="text-xs text-muted-foreground font-medium flex items-center mr-1">
               Sources:
             </span>
-            {message.citations.map((cit, i) => (
-              <Button
-                key={i}
-                variant="outline"
-                size="sm"
-                className="h-6 text-[10px] px-2 rounded-full border-primary/20 hover:border-primary/50 text-muted-foreground hover:text-foreground transition-all"
-                onClick={() => {
-                  setSelectedCitation(cit);
-                  setCitationOpen(true);
-                }}
-              >
-                [{i + 1}] {cit.sourceName}
-                {cit.locationType === 'page' && cit.pageNumber ? ` • p.${cit.pageNumber}` : ''}
-                {cit.locationType === 'slide' && cit.slideNumber ? ` • Slide ${formatSlideNumber(cit.slideNumber)}` : ''}
-              </Button>
-            ))}
+            {message.citations.map((cit, i) => {
+              const isVisual = cit.evidenceType === "visual";
+              return (
+                <Button
+                  key={i}
+                  variant="outline"
+                  size="sm"
+                  className={`h-6 text-[10px] px-2.5 rounded-full transition-all flex items-center gap-1 ${
+                    isVisual
+                      ? "border-primary/50 bg-primary/10 hover:border-primary text-foreground font-medium"
+                      : "border-primary/20 hover:border-primary/50 text-muted-foreground hover:text-foreground"
+                  }`}
+                  onClick={() => {
+                    setSelectedCitation(cit);
+                    setCitationOpen(true);
+                  }}
+                >
+                  {isVisual ? (
+                    <span className="text-primary font-bold">▣</span>
+                  ) : (
+                    <span>[{i + 1}]</span>
+                  )}
+                  <span className="truncate max-w-[140px]">{cit.sourceName}</span>
+                  {cit.locationType === 'page' && cit.pageNumber ? ` • p.${cit.pageNumber}` : ''}
+                  {cit.locationType === 'slide' && cit.slideNumber ? ` • Slide ${formatSlideNumber(cit.slideNumber)}` : ''}
+                  {cit.locationType === 'video' && cit.startTime !== undefined ? (
+                    isVisual ? ` • ${formatTimestamp(cit.startTime)}` : ` • ${formatTimestamp(cit.startTime)}–${formatTimestamp(cit.endTime)}`
+                  ) : ''}
+                  {isVisual && cit.visualType ? ` • ${cit.visualType}` : ''}
+                </Button>
+              );
+            })}
           </div>
         )}
 
@@ -303,32 +339,126 @@ function MessageBubble({ message }) {
       </div>
 
       <Dialog open={citationOpen} onOpenChange={setCitationOpen}>
-        <DialogContent className="max-w-xl">
+        <DialogContent className={
+          selectedCitation?.evidenceType === 'visual' || selectedCitation?.locationType === 'video' 
+            ? "w-[95vw] md:w-[min(92vw,860px)] max-w-4xl max-h-[90vh] overflow-y-auto" 
+            : "max-w-xl"
+        }>
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <FileText className="w-5 h-5 text-primary" />
-              {selectedCitation?.sourceName}
+              {selectedCitation?.evidenceType === 'visual' ? (
+                <>
+                  <span className="text-primary text-base">▣</span>
+                  <span className="truncate">Visual Citation · {selectedCitation?.visualType?.toUpperCase() || "VISUAL"}</span>
+                </>
+              ) : selectedCitation?.locationType === 'video' ? (
+                <>
+                  <FileText className="w-5 h-5 text-primary shrink-0" />
+                  <span className="truncate">Video Citation</span>
+                </>
+              ) : (
+                <>
+                  <FileText className="w-5 h-5 text-primary shrink-0" />
+                  <span className="truncate">{selectedCitation?.sourceName}</span>
+                </>
+              )}
             </DialogTitle>
           </DialogHeader>
           {selectedCitation && (
             <div className="space-y-4">
-              <div className="flex items-center gap-4 text-sm text-muted-foreground border-b pb-3">
-                {selectedCitation.locationType === 'page' && (
-                  <span className="bg-muted px-2 py-1 rounded">Page {selectedCitation.pageNumber}</span>
-                )}
-                {selectedCitation.locationType === 'slide' && (
-                  <span className="bg-muted px-2 py-1 rounded">Slide {formatSlideNumber(selectedCitation.slideNumber)}</span>
-                )}
-                {selectedCitation.sectionTitle && (
-                  <span className="font-medium">{selectedCitation.sectionTitle}</span>
-                )}
+              {/* Location and Source Header */}
+              <div className="flex flex-col gap-1 border-b pb-3">
+                <span className="text-sm font-medium line-clamp-2">{selectedCitation.sourceName}</span>
+                <div className="flex items-center gap-2 text-primary font-medium text-xs flex-wrap mt-1">
+                  {selectedCitation.locationType === 'video' && selectedCitation.startTime !== undefined && (
+                    <span className="bg-primary/10 px-2 py-0.5 rounded font-mono">
+                      ▶ {formatTimestamp(selectedCitation.startTime)} {selectedCitation.endTime ? `– ${formatTimestamp(selectedCitation.endTime)}` : ''}
+                    </span>
+                  )}
+                  {selectedCitation.locationType === 'page' && selectedCitation.pageNumber && (
+                    <span className="bg-muted px-2 py-0.5 rounded text-foreground">
+                      Page {selectedCitation.pageNumber}
+                    </span>
+                  )}
+                  {selectedCitation.locationType === 'slide' && selectedCitation.slideNumber && (
+                    <span className="bg-muted px-2 py-0.5 rounded text-foreground">
+                      Slide {formatSlideNumber(selectedCitation.slideNumber)}
+                    </span>
+                  )}
+                  {selectedCitation.visualType && (
+                    <span className="bg-primary/15 text-primary px-2 py-0.5 rounded uppercase text-[10px] tracking-wider">
+                      {selectedCitation.visualType}
+                    </span>
+                  )}
+                  {selectedCitation.sectionTitle && (
+                    <span className="text-muted-foreground text-xs">• {selectedCitation.sectionTitle}</span>
+                  )}
+                </div>
               </div>
-              <div className="text-sm leading-relaxed whitespace-pre-wrap bg-muted/30 p-4 rounded-lg border font-mono">
-                {selectedCitation.excerpt}
+
+              {/* Visual Image Preview */}
+              {selectedCitation.evidenceType === 'visual' && selectedCitation.imageUrl && (
+                <div className="w-full bg-black/90 rounded-xl overflow-hidden flex items-center justify-center p-3 border border-white/10 max-h-[420px]">
+                  <img 
+                    src={selectedCitation.imageUrl} 
+                    alt={selectedCitation.sectionTitle || "Visual Evidence"}
+                    className="max-h-[390px] w-auto max-w-full object-contain rounded"
+                  />
+                </div>
+              )}
+              
+              {/* Video Player Preview (if not visual image, or for video citation) */}
+              {selectedCitation.evidenceType !== 'visual' && selectedCitation.locationType === 'video' && selectedSource?.fileUrl && (
+                <div className="w-full overflow-hidden rounded-xl bg-black">
+                  <video 
+                    ref={videoRef}
+                    src={selectedSource.fileUrl} 
+                    controls 
+                    className="aspect-video w-full"
+                    onLoadedMetadata={() => {
+                      if (videoRef.current) {
+                        const t = selectedCitation.startTime || 0;
+                        if (videoRef.current.duration) {
+                          videoRef.current.currentTime = Math.min(t, videoRef.current.duration);
+                        } else {
+                          videoRef.current.currentTime = t;
+                        }
+                      }
+                    }}
+                  />
+                </div>
+              )}
+
+              {/* Excerpt / AI Interpretation */}
+              <div className="space-y-2">
+                <div className="text-sm font-medium">
+                  {selectedCitation.evidenceType === 'visual' ? 'AI Visual Interpretation' : 'Evidence Excerpt'}
+                </div>
+                <div className="text-sm leading-relaxed whitespace-pre-wrap bg-muted/30 p-4 rounded-lg border font-mono max-h-48 overflow-y-auto">
+                  {selectedCitation.excerpt}
+                </div>
               </div>
-              <p className="text-xs text-muted-foreground italic text-center">
-                This is the exact excerpt retrieved by the AI from your uploaded material.
-              </p>
+
+              {/* Confidence Notes */}
+              {selectedCitation.confidenceNotes && selectedCitation.confidenceNotes.length > 0 && (
+                <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg text-xs text-amber-500">
+                  <span className="font-semibold">Observation Notes: </span>
+                  {selectedCitation.confidenceNotes.join("; ")}
+                </div>
+              )}
+
+              {/* Link to Open in Source */}
+              <div className="flex items-center justify-between pt-2 border-t text-xs">
+                <p className="text-muted-foreground italic">
+                  Exact {selectedCitation.evidenceType === 'visual' ? 'visual evidence' : 'excerpt'} retrieved from course materials.
+                </p>
+                <Link 
+                  href={`/dashboard/courses/${currentCourseId}/sources/${selectedCitation.sourceId}`}
+                  className="text-primary hover:underline font-medium flex items-center gap-1"
+                >
+                  Open in Source →
+                </Link>
+              </div>
             </div>
           )}
         </DialogContent>

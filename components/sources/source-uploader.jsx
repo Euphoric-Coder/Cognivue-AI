@@ -100,7 +100,7 @@ export function SourceUploader({ courseId }) {
         toast.success(`${file.name} uploaded successfully`);
 
         // Trigger backend processing if supported
-        if (type === "pdf" || type === "pptx") {
+        if (type === "pdf" || type === "pptx" || type === "video") {
           toast("Starting processing pipeline...", {
             description: `${file.name} has been queued for ingestion.`
           });

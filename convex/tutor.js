@@ -61,6 +61,24 @@ export const createSession = mutation({
   }
 });
 
+const citationValidator = v.object({
+  sourceId: v.string(),
+  sourceChunkId: v.string(),
+  sourceVisualId: v.optional(v.string()),
+  sourceName: v.string(),
+  locationType: v.string(),
+  pageNumber: v.optional(v.number()),
+  slideNumber: v.optional(v.number()),
+  startTime: v.optional(v.number()),
+  endTime: v.optional(v.number()),
+  evidenceType: v.optional(v.string()),
+  visualType: v.optional(v.string()),
+  imageUrl: v.optional(v.string()),
+  confidenceNotes: v.optional(v.array(v.string())),
+  sectionTitle: v.optional(v.string()),
+  excerpt: v.optional(v.string())
+});
+
 export const addMessage = mutation({
   args: {
     sessionId: v.id("tutorSessions"),
@@ -68,16 +86,7 @@ export const addMessage = mutation({
     content: v.string(),
     grounded: v.optional(v.boolean()),
     retrievalStatus: v.optional(v.string()),
-    citations: v.optional(v.array(v.object({
-      sourceId: v.string(),
-      sourceChunkId: v.string(),
-      sourceName: v.string(),
-      locationType: v.string(),
-      pageNumber: v.optional(v.number()),
-      slideNumber: v.optional(v.number()),
-      sectionTitle: v.optional(v.string()),
-      excerpt: v.optional(v.string())
-    }))),
+    citations: v.optional(v.array(citationValidator)),
   },
   handler: async (ctx, args) => {
     const session = await ctx.db.get(args.sessionId);
@@ -111,6 +120,13 @@ export const getChunk = query({
   }
 });
 
+export const getVisual = query({
+  args: { visualId: v.id("sourceVisuals") },
+  handler: async (ctx, args) => {
+    return await ctx.db.get(args.visualId);
+  }
+});
+
 export const getSource = query({
   args: { sourceId: v.id("sources") },
   handler: async (ctx, args) => {
@@ -141,11 +157,22 @@ export const search = action({
            console.warn(`RAG_ORPHAN_CHUNK_DISCARDED: chunkId=${doc._id} sourceId=${doc.sourceId}`);
            continue; // Skip this chunk
          }
+
+         let visual = null;
+         if (doc.sourceVisualId) {
+           visual = await ctx.runQuery(api.tutor.getVisual, { visualId: doc.sourceVisualId });
+         }
          
          chunks.push({ 
            ...doc, 
            _score: res._score,
-           sourceName: source.name
+           sourceName: source.name,
+           videoDuration: source.durationSeconds,
+           imageUrl: visual?.imageUrl,
+           visualTitle: visual?.title,
+           visualDescription: visual?.description,
+           structuredData: visual?.structuredData,
+           confidenceNotes: visual?.confidenceNotes,
          });
        }
     }
@@ -205,16 +232,7 @@ export const addMessageBackend = mutation({
     content: v.string(),
     grounded: v.optional(v.boolean()),
     retrievalStatus: v.optional(v.string()),
-    citations: v.optional(v.array(v.object({
-      sourceId: v.string(),
-      sourceChunkId: v.string(),
-      sourceName: v.string(),
-      locationType: v.string(),
-      pageNumber: v.optional(v.number()),
-      slideNumber: v.optional(v.number()),
-      sectionTitle: v.optional(v.string()),
-      excerpt: v.optional(v.string())
-    }))),
+    citations: v.optional(v.array(citationValidator)),
   },
   handler: async (ctx, args) => {
     const session = await ctx.db.get(args.sessionId);

@@ -133,11 +133,35 @@ export const deleteCourse = mutation({
       .collect();
       
     for (const source of sources) {
-      // In a real implementation we would also delete the file from storage
       if (source.storageId) {
         await ctx.storage.delete(source.storageId);
       }
       await ctx.db.delete(source._id);
+    }
+
+    // Cascade delete V6 Knowledge Graph tables
+    const existingEvidence = await ctx.db
+      .query("conceptEvidence")
+      .withIndex("by_course", (q) => q.eq("courseId", args.courseId))
+      .collect();
+    for (const ev of existingEvidence) {
+      await ctx.db.delete(ev._id);
+    }
+
+    const existingRels = await ctx.db
+      .query("conceptRelationships")
+      .withIndex("by_course", (q) => q.eq("courseId", args.courseId))
+      .collect();
+    for (const rel of existingRels) {
+      await ctx.db.delete(rel._id);
+    }
+
+    const existingConcepts = await ctx.db
+      .query("courseConcepts")
+      .withIndex("by_course", (q) => q.eq("courseId", args.courseId))
+      .collect();
+    for (const c of existingConcepts) {
+      await ctx.db.delete(c._id);
     }
     
     // Delete the course

@@ -78,6 +78,14 @@ export const createSource = mutation({
       createdAt: Date.now(),
       updatedAt: Date.now(),
     });
+
+    if (course.knowledgeGraphStatus === "ready") {
+      await ctx.db.patch(args.courseId, {
+        knowledgeGraphStatus: "outdated",
+        updatedAt: Date.now(),
+      });
+      console.log(`KG_MARKED_OUTDATED: sourceAdded=${sourceId}, courseId=${args.courseId}`);
+    }
     
     return { sourceId, fileUrl };
   },
@@ -106,15 +114,58 @@ export const deleteSource = mutation({
     console.log(`SOURCE_CHUNKS_DELETE_COMPLETE: sourceId=${args.sourceId}, count=${chunksDeleted}`);
     console.log(`SOURCE_VECTORS_DELETE_COMPLETE: implicitly handled via sourceChunks`);
     
-    // 2. Delete storage
+    // 2. Cascade delete transcriptSegments
+    const segments = await ctx.db
+      .query("transcriptSegments")
+      .withIndex("by_source", (q) => q.eq("sourceId", args.sourceId))
+      .collect();
+      
+    let segmentsDeleted = 0;
+    for (const segment of segments) {
+      await ctx.db.delete(segment._id);
+      segmentsDeleted++;
+    }
+    console.log(`SOURCE_SEGMENTS_DELETE_COMPLETE: sourceId=${args.sourceId}, count=${segmentsDeleted}`);
+
+    // 3. Cascade delete sourceVisuals and their storage
+    const visuals = await ctx.db
+      .query("sourceVisuals")
+      .withIndex("by_source", (q) => q.eq("sourceId", args.sourceId))
+      .collect();
+
+    let visualsDeleted = 0;
+    for (const visual of visuals) {
+      if (visual.storageId) {
+        try {
+          await ctx.storage.delete(visual.storageId);
+        } catch (err) {
+          console.warn(`Failed to delete storage for visual ${visual._id}:`, err);
+        }
+      }
+      await ctx.db.delete(visual._id);
+      visualsDeleted++;
+    }
+    console.log(`SOURCE_VISUALS_DELETE_COMPLETE: sourceId=${args.sourceId}, count=${visualsDeleted}`);
+    
+    // 4. Delete source main storage
     if (source.storageId) {
       await ctx.storage.delete(source.storageId);
       console.log(`SOURCE_STORAGE_DELETE_COMPLETE`);
     }
     
-    // 3. Delete source record
+    // 5. Delete source record
     await ctx.db.delete(args.sourceId);
-    console.log(`SOURCE_DELETE_COMPLETE: sourceId=${args.sourceId}, chunksDeleted=${chunksDeleted}, storageDeleted=${!!source.storageId}`);
+    console.log(`SOURCE_DELETE_COMPLETE: sourceId=${args.sourceId}, chunksDeleted=${chunksDeleted}, segmentsDeleted=${segmentsDeleted}, visualsDeleted=${visualsDeleted}, storageDeleted=${!!source.storageId}`);
+
+    // 6. Mark course knowledge graph outdated if ready
+    const course = await ctx.db.get(source.courseId);
+    if (course && course.knowledgeGraphStatus === "ready") {
+      await ctx.db.patch(source.courseId, {
+        knowledgeGraphStatus: "outdated",
+        updatedAt: Date.now(),
+      });
+      console.log(`KG_MARKED_OUTDATED: sourceDeleted=${args.sourceId}, courseId=${source.courseId}`);
+    }
   },
 });
 
@@ -168,6 +219,84 @@ export const getSourceChunks = query({
       if (numA !== numB) return numA - numB;
       return a.chunkIndex - b.chunkIndex;
     });
+  },
+});
+
+export const getTranscriptSegments = query({
+  args: { sourceId: v.id("sources") },
+  handler: async (ctx, args) => {
+    const user = await requireUser(ctx);
+    const source = await ctx.db.get(args.sourceId);
+    
+    if (!source || source.userId !== user._id) return [];
+    
+    const segments = await ctx.db
+      .query("transcriptSegments")
+      .withIndex("by_source", (q) => q.eq("sourceId", args.sourceId))
+      .collect();
+      
+    return segments.sort((a, b) => a.segmentIndex - b.segmentIndex);
+  },
+});
+
+export const getSourceVisuals = query({
+  args: { sourceId: v.id("sources") },
+  handler: async (ctx, args) => {
+    const user = await requireUser(ctx);
+    const source = await ctx.db.get(args.sourceId);
+    
+    if (!source || source.userId !== user._id) return [];
+    
+    const visuals = await ctx.db
+      .query("sourceVisuals")
+      .withIndex("by_source", (q) => q.eq("sourceId", args.sourceId))
+      .collect();
+      
+    return visuals.sort((a, b) => {
+      const locA = a.pageNumber || a.slideNumber || a.startTime || 0;
+      const locB = b.pageNumber || b.slideNumber || b.startTime || 0;
+      return locA - locB;
+    });
+  },
+});
+
+export const getCourseVisualMetrics = query({
+  args: { courseId: v.id("courses") },
+  handler: async (ctx, args) => {
+    const user = await requireUser(ctx);
+    const course = await ctx.db.get(args.courseId);
+    if (!course || course.userId !== user._id) throw new Error("Unauthorized");
+
+    const visuals = await ctx.db
+      .query("sourceVisuals")
+      .withIndex("by_course", (q) => q.eq("courseId", args.courseId))
+      .collect();
+
+    let diagrams = 0;
+    let charts = 0;
+    let tables = 0;
+    let keyframes = 0;
+
+    for (const v of visuals) {
+      if (["diagram", "flowchart", "architecture", "er_diagram", "state_diagram"].includes(v.visualType)) {
+        diagrams++;
+      } else if (["chart", "graph"].includes(v.visualType)) {
+        charts++;
+      } else if (v.visualType === "table") {
+        tables++;
+      }
+      if (v.locationType === "video") {
+        keyframes++;
+      }
+    }
+
+    return {
+      totalVisuals: visuals.length,
+      diagrams,
+      charts,
+      tables,
+      keyframes,
+    };
   },
 });
 

@@ -14,3 +14,7 @@ class IngestionResponse(BaseModel):
     sourceId: str
     status: str
     chunksCreated: int = 0
+
+class RebuildIndexRequest(BaseModel):
+    sourceId: str
+    courseId: str

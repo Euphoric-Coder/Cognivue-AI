@@ -1,4 +1,5 @@
 "use client";
+import { useRouter } from "next/navigation";
 
 import { useState } from "react";
 import { useQuery, useMutation } from "convex/react";
@@ -29,6 +30,7 @@ import { EditSourceDialog } from "@/components/sources/edit-source-dialog";
 import Link from "next/link";
 
 export function SourceList({ courseId }) {
+  const router = useRouter();
   const [editingSource, setEditingSource] = useState(null);
   const sources = useQuery(api.sources.getCourseSources, { courseId });
   const deleteSource = useMutation(api.sources.deleteSource);
@@ -118,7 +120,7 @@ export function SourceList({ courseId }) {
                   )}
                   {source.status === 'ready' && source.chunkCount > 0 && (
                      <div className="text-[10px] text-muted-foreground mt-1">
-                       <div>{source.pageCount || source.slideCount || 0} {source.type === 'pdf' ? 'pages' : 'slides'} • {source.chunkCount} chunks</div>
+                       <div>{source.type === 'video' ? 'Video' : source.pageCount || source.slideCount || 0} {source.type === 'pdf' ? 'pages' : source.type === 'pptx' ? 'slides' : ''} • {source.chunkCount} chunks</div>
                        <div className="mt-1 font-medium flex items-center gap-1">
                          <span>AI Search:</span>
                          <span className={
@@ -143,10 +145,8 @@ export function SourceList({ courseId }) {
                   <DropdownMenuContent align="end">
                     <DropdownMenuGroup>
                       <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                      <DropdownMenuItem asChild>
-                        <Link href={`/dashboard/courses/${courseId}/sources/${source._id}`}>
-                          View details
-                        </Link>
+                      <DropdownMenuItem onClick={() => router.push(`/dashboard/courses/${courseId}/sources/${source._id}`)}>
+                        View details
                       </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => setEditingSource(source)}>
                         <Edit2 className="mr-2 h-4 w-4" />

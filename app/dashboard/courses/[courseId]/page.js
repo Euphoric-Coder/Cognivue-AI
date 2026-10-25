@@ -4,7 +4,7 @@ import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { use } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Library, Network, Target, MessageSquare, CheckCircle2, Circle } from "lucide-react";
+import { Library, Network, Target, MessageSquare, CheckCircle2, Circle, Image as ImageIcon } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,8 @@ export default function CourseOverviewPage({ params }) {
   const { courseId } = unwrappedParams;
   const course = useQuery(api.courses.getCourseById, { courseId });
   const sources = useQuery(api.sources.getCourseSources, { courseId });
+  const visualMetrics = useQuery(api.sources.getCourseVisualMetrics, { courseId });
+  const graphMetrics = useQuery(api.knowledgeGraph.getCourseGraphMetrics, { courseId });
 
   if (course === undefined || sources === undefined) {
     return (
@@ -39,7 +41,7 @@ export default function CourseOverviewPage({ params }) {
         </p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Learning Sources</CardTitle>
@@ -77,6 +79,21 @@ export default function CourseOverviewPage({ params }) {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Visuals Analyzed</CardTitle>
+            <ImageIcon className="h-4 w-4 text-primary" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{visualMetrics?.totalVisuals ?? 0}</div>
+            <p className="text-xs text-muted-foreground line-clamp-1">
+              {visualMetrics && visualMetrics.totalVisuals > 0
+                ? `${visualMetrics.diagrams} diagrams · ${visualMetrics.charts} charts · ${visualMetrics.tables} tables`
+                : "Diagrams, charts, tables"}
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">AI-Ready Sources</CardTitle>
             <MessageSquare className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
@@ -84,6 +101,23 @@ export default function CourseOverviewPage({ params }) {
             <div className="text-2xl font-bold">{sources.filter(s => s.ragStatus === 'ready').length}</div>
             <p className="text-xs text-muted-foreground">Available for AI Tutor</p>
           </CardContent>
+        </Card>
+
+        <Card className="hover:border-primary/50 transition-colors">
+          <Link href={`/dashboard/courses/${courseId}/knowledge-map`}>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Knowledge Map</CardTitle>
+              <Network className="h-4 w-4 text-primary" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{graphMetrics?.conceptCount ?? 0}</div>
+              <p className="text-xs text-muted-foreground line-clamp-1">
+                {graphMetrics && graphMetrics.conceptCount > 0
+                  ? `${graphMetrics.relationshipCount} links · ${graphMetrics.prerequisiteCount} prerequisites`
+                  : "Explore concepts & links →"}
+              </p>
+            </CardContent>
+          </Link>
         </Card>
       </div>
 

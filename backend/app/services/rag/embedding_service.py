@@ -27,8 +27,12 @@ class EmbeddingService:
         if not self.client:
             raise ValueError("Embedding client is not configured.")
             
-        result = self.client.models.embed_content(
-            model=settings.embedding_model,
-            contents=texts
-        )
-        return [emb.values for emb in result.embeddings]
+        embeddings = []
+        for text in texts:
+            result = self.client.models.embed_content(
+                model=settings.embedding_model,
+                contents=text
+            )
+            embeddings.append(result.embeddings[0].values)
+            
+        return embeddings
