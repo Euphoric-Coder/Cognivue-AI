@@ -185,4 +185,62 @@ class RelationshipExtractor:
 
         except Exception as e:
             logger.error(f"Error in RelationshipExtractor: {e}")
+            err_str = str(e).upper()
+            if "RESOURCE_EXHAUSTED" in err_str or "402" in err_str or "429" in err_str or "QUOTA" in err_str:
+                logger.warning("Gemini API quota depleted in RelationshipExtractor. Using grounded co-occurrence fallback.")
+                fallback_relationships = []
+                seen_pairs = set()
+
+                for c_from in concepts:
+                    from_name = c_from["name"]
+                    from_norm = ConceptNormalizer.normalize_name(from_name)
+                    for c_to in concepts:
+                        to_name = c_to["name"]
+                        to_norm = ConceptNormalizer.normalize_name(to_name)
+                        if from_norm == to_norm:
+                            continue
+
+                        pair_key = (c_from.get("tempId"), c_to.get("tempId"))
+                        if pair_key in seen_pairs:
+                            continue
+
+                        # Check if any evidence context mentions both concepts
+                        for ctx in evidence_items:
+                            text = ctx.get("text", "")
+                            text_lower = text.lower()
+                            if from_name.lower() in text_lower and to_name.lower() in text_lower:
+                                # Determine relationship type by explicit keywords
+                                rel_type = "RELATED_TO"
+                                explanation = f"{from_name} and {to_name} co-occur in {ctx.get('sourceName', 'course material')}."
+                                
+                                if "prerequisite" in text_lower or "necessary before" in text_lower or "required before" in text_lower:
+                                    rel_type = "PREREQUISITE_OF"
+                                    explanation = f"{from_name} is stated as a prerequisite or necessary foundation for {to_name}."
+                                elif "depends on" in text_lower:
+                                    rel_type = "DEPENDS_ON"
+                                    explanation = f"{from_name} is stated as depending on {to_name}."
+                                elif "part of" in text_lower:
+                                    rel_type = "PART_OF"
+                                    explanation = f"{from_name} is part of {to_name}."
+                                elif "used for" in text_lower:
+                                    rel_type = "USED_FOR"
+                                    explanation = f"{from_name} is used for {to_name}."
+
+                                seen_pairs.add(pair_key)
+                                fallback_relationships.append({
+                                    "fromTempId": c_from.get("tempId"),
+                                    "toTempId": c_to.get("tempId"),
+                                    "fromConceptName": from_name,
+                                    "toConceptName": to_name,
+                                    "relationType": rel_type,
+                                    "confidence": "high" if rel_type != "RELATED_TO" else "medium",
+                                    "confidenceScore": 0.85 if rel_type != "RELATED_TO" else 0.70,
+                                    "explanation": explanation,
+                                    "evidenceSummary": text[:200],
+                                    "evidenceIds": [ctx.get("sourceChunkId") or ctx.get("sourceVisualId") or "CTX_1"],
+                                })
+                                break
+
+                return fallback_relationships
+
             return []

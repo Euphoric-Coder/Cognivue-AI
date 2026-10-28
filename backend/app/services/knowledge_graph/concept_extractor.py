@@ -1,10 +1,12 @@
 import logging
 import json
+import re
 from typing import List, Dict, Any, Optional
 from google import genai
 from google.genai import types
 from pydantic import BaseModel, Field
 from app.config import settings
+from app.services.knowledge_graph.concept_normalizer import ConceptNormalizer
 
 logger = logging.getLogger(__name__)
 
@@ -163,4 +165,61 @@ class ConceptExtractor:
 
         except Exception as e:
             logger.error(f"Error in ConceptExtractor: {e}")
+            err_str = str(e).upper()
+            if "RESOURCE_EXHAUSTED" in err_str or "402" in err_str or "429" in err_str or "QUOTA" in err_str:
+                logger.warning("Gemini API quota depleted in ConceptExtractor. Using grounded heuristic fallback.")
+                fallback_results = []
+                seen_names = set()
+
+                for ctx in evidence_items:
+                    text = ctx.get("text", "")
+                    sec_title = ctx.get("sectionTitle", "").strip()
+                    
+                    # Extract title candidate if present
+                    candidates = []
+                    if sec_title and len(sec_title) < 50:
+                        candidates.append((sec_title, "topic", f"Topic covered under {sec_title}"))
+
+                    # Look for capitalized key terms (2 to 4 words, Title Cased)
+                    matches = re.findall(r"\b([A-Z][a-z]+(?:\s+[A-Z][a-z]+){1,3})\b", text)
+                    for m in matches:
+                        m_clean = m.strip()
+                        m_upper = m_clean.upper()
+                        # Ignore common non-concepts or injection attempts
+                        if any(inj in m_upper for inj in ["SYSTEM INSTRUCTION", "ADMIN", "SECRET", "IGNORE PREVIOUS", "LECTURE SLIDES", "COURSE NOTES"]):
+                            continue
+                        if len(m_clean) > 4 and m_clean not in [c[0] for c in candidates]:
+                            candidates.append((m_clean, "concept", f"Concept discussed in {ctx.get('sourceName', 'course material')}"))
+
+                    for cand_name, cand_type, cand_desc in candidates[:3]:
+                        norm = ConceptNormalizer.normalize_name(cand_name)
+                        if norm in seen_names or not norm:
+                            continue
+                        seen_names.add(norm)
+
+                        fallback_results.append({
+                            "name": cand_name,
+                            "type": cand_type,
+                            "description": cand_desc,
+                            "importance": "supporting",
+                            "aliases": [],
+                            "evidence": [{
+                                "sourceId": ctx.get("sourceId"),
+                                "sourceName": ctx.get("sourceName", "Course Material"),
+                                "evidenceType": ctx.get("evidenceType", "text"),
+                                "sourceChunkId": ctx.get("sourceChunkId"),
+                                "sourceVisualId": ctx.get("sourceVisualId"),
+                                "pageNumber": ctx.get("pageNumber"),
+                                "slideNumber": ctx.get("slideNumber"),
+                                "startTime": ctx.get("startTime"),
+                                "endTime": ctx.get("endTime"),
+                                "visualType": ctx.get("visualType"),
+                                "imageUrl": ctx.get("imageUrl"),
+                                "excerpt": text[:250],
+                                "confidence": "medium",
+                            }]
+                        })
+
+                return fallback_results
+
             return []
