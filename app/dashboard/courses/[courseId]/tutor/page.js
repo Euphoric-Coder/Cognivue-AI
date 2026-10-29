@@ -126,16 +126,18 @@ function ChatArea({ courseId, sessionId }) {
   const searchParams = useSearchParams();
   const initialQ = searchParams?.get("initialQuestion");
   const messages = useQuery(api.tutor.getMessages, { sessionId });
-  const [input, setInput] = useState("");
+  const [prevInitialQ, setPrevInitialQ] = useState(initialQ);
+  const [input, setInput] = useState(() => initialQ || "");
   const [loading, setLoading] = useState(false);
   const [loadingState, setLoadingState] = useState("");
   const messagesEndRef = useRef(null);
 
-  useEffect(() => {
+  if (initialQ !== prevInitialQ) {
+    setPrevInitialQ(initialQ);
     if (initialQ) {
       setInput(initialQ);
     }
-  }, [initialQ]);
+  }
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });

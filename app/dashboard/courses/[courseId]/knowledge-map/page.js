@@ -112,8 +112,17 @@ export default function KnowledgeMapPage({ params }) {
     );
   }
 
-  const status = graphData.status || "not_started";
-  const readySources = sources.filter((s) => s.status === "ready");
+  if (!graphData) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[calc(100vh-12rem)] space-y-4">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        <p className="text-sm text-muted-foreground">Connecting to course...</p>
+      </div>
+    );
+  }
+
+  const status = graphData?.status || "not_started";
+  const readySources = (sources || []).filter((s) => s.status === "ready");
 
   // State 1: Building State
   if (status === "building" || isBuilding) {

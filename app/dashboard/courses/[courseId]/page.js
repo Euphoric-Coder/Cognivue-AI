@@ -28,9 +28,21 @@ export default function CourseOverviewPage({ params }) {
     );
   }
 
-  const hasSources = sources.length > 0;
-  const processedSourcesCount = sources.filter(s => s.status === 'ready').length;
-  const totalChunks = sources.reduce((acc, s) => acc + (s.chunkCount || 0), 0);
+  if (!course) {
+    return (
+      <div className="space-y-6 max-w-5xl mx-auto text-center py-16">
+        <h2 className="text-xl font-semibold">Course not found</h2>
+        <p className="text-muted-foreground mt-1">The course does not exist or you do not have permission to access it.</p>
+        <Link href="/dashboard" className="mt-4 inline-block">
+          <Button variant="outline">Back to Dashboard</Button>
+        </Link>
+      </div>
+    );
+  }
+
+  const hasSources = (sources || []).length > 0;
+  const processedSourcesCount = (sources || []).filter(s => s.status === 'ready').length;
+  const totalChunks = (sources || []).reduce((acc, s) => acc + (s.chunkCount || 0), 0);
 
   return (
     <div className="space-y-8 max-w-5xl mx-auto">
@@ -131,7 +143,7 @@ export default function CourseOverviewPage({ params }) {
               <CheckCircle2 className="w-5 h-5 text-primary shrink-0" />
               <div className="space-y-1">
                 <p className="text-sm font-medium leading-none">Course created</p>
-                <p className="text-sm text-muted-foreground">You've successfully set up the workspace.</p>
+                <p className="text-sm text-muted-foreground">You&apos;ve successfully set up the workspace.</p>
               </div>
             </div>
             

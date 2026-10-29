@@ -1,25 +1,29 @@
 import { mutation, query, internalMutation } from "./_generated/server";
 import { v } from "convex/values";
 
-async function requireUser(ctx) {
+async function getCurrentUser(ctx) {
   const identity = await ctx.auth.getUserIdentity();
-  if (!identity) throw new Error("Unauthorized");
+  if (!identity) return null;
   
-  const user = await ctx.db
+  return await ctx.db
     .query("users")
     .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
     .unique();
-    
-  if (!user) throw new Error("User not found");
+}
+
+async function requireUser(ctx) {
+  const user = await getCurrentUser(ctx);
+  if (!user) throw new Error("Unauthorized");
   return user;
 }
 
 export const getCourseKnowledgeGraph = query({
   args: { courseId: v.id("courses") },
   handler: async (ctx, args) => {
-    const user = await requireUser(ctx);
+    const user = await getCurrentUser(ctx);
+    if (!user) return null;
     const course = await ctx.db.get(args.courseId);
-    if (!course || course.userId !== user._id) throw new Error("Unauthorized");
+    if (!course || course.userId !== user._id) return null;
 
     const concepts = await ctx.db
       .query("courseConcepts")
@@ -53,9 +57,10 @@ export const getConceptEvidence = query({
     conceptId: v.id("courseConcepts") 
   },
   handler: async (ctx, args) => {
-    const user = await requireUser(ctx);
+    const user = await getCurrentUser(ctx);
+    if (!user) return [];
     const concept = await ctx.db.get(args.conceptId);
-    if (!concept || concept.userId !== user._id) throw new Error("Unauthorized");
+    if (!concept || concept.userId !== user._id) return [];
 
     const evidence = await ctx.db
       .query("conceptEvidence")
@@ -72,9 +77,10 @@ export const getConceptDetails = query({
     conceptId: v.id("courseConcepts") 
   },
   handler: async (ctx, args) => {
-    const user = await requireUser(ctx);
+    const user = await getCurrentUser(ctx);
+    if (!user) return null;
     const concept = await ctx.db.get(args.conceptId);
-    if (!concept || concept.userId !== user._id) throw new Error("Unauthorized");
+    if (!concept || concept.userId !== user._id) return null;
 
     const evidence = await ctx.db
       .query("conceptEvidence")
@@ -128,7 +134,8 @@ export const getConceptDetails = query({
 export const getCourseGraphMetrics = query({
   args: { courseId: v.id("courses") },
   handler: async (ctx, args) => {
-    const user = await requireUser(ctx);
+    const user = await getCurrentUser(ctx);
+    if (!user) return null;
     const course = await ctx.db.get(args.courseId);
     if (!course || course.userId !== user._id) return null;
 
@@ -165,7 +172,7 @@ export const updateGraphStatusBackend = mutation({
   args: {
     courseId: v.id("courses"),
     status: v.string(),
-    error: v.optional(v.string()),
+    error: v.optional(v.union(v.string(), v.null())),
   },
   handler: async (ctx, args) => {
     const course = await ctx.db.get(args.courseId);
@@ -175,7 +182,7 @@ export const updateGraphStatusBackend = mutation({
       knowledgeGraphStatus: args.status,
       updatedAt: Date.now(),
     };
-    if (args.error !== undefined) {
+    if (args.error !== undefined && args.error !== null) {
       patch.knowledgeGraphError = args.error;
     } else if (args.status === "building" || args.status === "ready") {
       patch.knowledgeGraphError = undefined;
@@ -222,7 +229,7 @@ export const getBackendEvidenceData = query({
 export const saveKnowledgeGraphBackend = mutation({
   args: {
     courseId: v.id("courses"),
-    userId: v.id("users"),
+    userId: v.optional(v.string()),
     snapshotHash: v.string(),
     concepts: v.array(
       v.object({
@@ -234,20 +241,23 @@ export const saveKnowledgeGraphBackend = mutation({
         importance: v.string(),
         sourceCount: v.number(),
         evidenceCount: v.number(),
-        aliases: v.optional(v.array(v.string())),
-        masteryEligible: v.optional(v.boolean()),
+        aliases: v.optional(v.union(v.array(v.string()), v.null())),
+        masteryEligible: v.optional(v.union(v.boolean(), v.null())),
+        evidence: v.optional(v.any()),
       })
     ),
     relationships: v.array(
       v.object({
         fromTempId: v.string(),
         toTempId: v.string(),
+        fromConceptName: v.optional(v.union(v.string(), v.null())),
+        toConceptName: v.optional(v.union(v.string(), v.null())),
         relationType: v.string(),
         confidence: v.string(),
-        confidenceScore: v.optional(v.number()),
-        explanation: v.optional(v.string()),
-        evidenceSummary: v.optional(v.string()),
-        evidenceIds: v.optional(v.array(v.string())),
+        confidenceScore: v.optional(v.union(v.number(), v.null())),
+        explanation: v.optional(v.union(v.string(), v.null())),
+        evidenceSummary: v.optional(v.union(v.string(), v.null())),
+        evidenceIds: v.optional(v.union(v.array(v.string()), v.null())),
       })
     ),
     evidence: v.array(
@@ -256,23 +266,35 @@ export const saveKnowledgeGraphBackend = mutation({
         sourceId: v.id("sources"),
         sourceName: v.string(),
         evidenceType: v.string(),
-        sourceChunkId: v.optional(v.id("sourceChunks")),
-        sourceVisualId: v.optional(v.id("sourceVisuals")),
-        pageNumber: v.optional(v.number()),
-        slideNumber: v.optional(v.number()),
-        startTime: v.optional(v.number()),
-        endTime: v.optional(v.number()),
-        visualType: v.optional(v.string()),
-        imageUrl: v.optional(v.string()),
+        sourceChunkId: v.optional(v.union(v.id("sourceChunks"), v.null())),
+        sourceVisualId: v.optional(v.union(v.id("sourceVisuals"), v.null())),
+        pageNumber: v.optional(v.union(v.number(), v.null())),
+        slideNumber: v.optional(v.union(v.number(), v.null())),
+        startTime: v.optional(v.union(v.number(), v.null())),
+        endTime: v.optional(v.union(v.number(), v.null())),
+        visualType: v.optional(v.union(v.string(), v.null())),
+        imageUrl: v.optional(v.union(v.string(), v.null())),
         excerpt: v.string(),
-        confidence: v.optional(v.string()),
-        confidenceScore: v.optional(v.number()),
+        confidence: v.optional(v.union(v.string(), v.null())),
+        confidenceScore: v.optional(v.union(v.number(), v.null())),
       })
     ),
   },
   handler: async (ctx, args) => {
     const course = await ctx.db.get(args.courseId);
     if (!course) throw new Error("Course not found");
+
+    // Resolve canonical Convex user ID from course document or Clerk ID lookup
+    let realUserId = course.userId;
+    if (!realUserId && args.userId) {
+      const user = await ctx.db
+        .query("users")
+        .withIndex("by_clerk_id", (q) => q.eq("clerkId", args.userId))
+        .unique();
+      if (user) {
+        realUserId = user._id;
+      }
+    }
 
     // 1. Transactional delete of old graph data for course
     const existingEvidence = await ctx.db
@@ -306,7 +328,7 @@ export const saveKnowledgeGraphBackend = mutation({
     for (const c of args.concepts) {
       if (c.importance === "core") coreCount++;
       const insertedId = await ctx.db.insert("courseConcepts", {
-        userId: args.userId,
+        userId: realUserId,
         courseId: args.courseId,
         name: c.name,
         normalizedName: c.normalizedName,
@@ -329,7 +351,7 @@ export const saveKnowledgeGraphBackend = mutation({
       if (!realConceptId) continue;
 
       await ctx.db.insert("conceptEvidence", {
-        userId: args.userId,
+        userId: realUserId,
         courseId: args.courseId,
         conceptId: realConceptId,
         sourceId: ev.sourceId,
@@ -363,7 +385,7 @@ export const saveKnowledgeGraphBackend = mutation({
       }
 
       await ctx.db.insert("conceptRelationships", {
-        userId: args.userId,
+        userId: realUserId,
         courseId: args.courseId,
         fromConceptId: fromRealId,
         toConceptId: toRealId,

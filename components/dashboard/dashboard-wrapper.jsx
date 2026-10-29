@@ -18,25 +18,8 @@ const NAV_ITEMS = [
   { name: "Settings", href: "/dashboard/settings", icon: Settings },
 ];
 
-export function DashboardWrapper({ children }) {
-  const { user, isLoaded } = useUser();
-  const createOrUpdateUser = useMutation(api.users.createOrUpdateUser);
-  const pathname = usePathname();
-  const [synced, setSynced] = useState(false);
-
-  useEffect(() => {
-    if (isLoaded && user && !synced) {
-      createOrUpdateUser({
-        clerkId: user.id,
-        name: user.fullName || user.firstName || "User",
-        email: user.primaryEmailAddress?.emailAddress || "",
-        imageUrl: user.imageUrl,
-      }).then(() => setSynced(true))
-        .catch(console.error);
-    }
-  }, [isLoaded, user, synced, createOrUpdateUser]);
-
-  const NavLinks = () => (
+function DashboardNavLinks({ pathname }) {
+  return (
     <>
       <div className="text-xs font-semibold text-muted-foreground mb-4 uppercase tracking-wider">
         Learning
@@ -58,6 +41,25 @@ export function DashboardWrapper({ children }) {
       })}
     </>
   );
+}
+
+export function DashboardWrapper({ children }) {
+  const { user, isLoaded } = useUser();
+  const createOrUpdateUser = useMutation(api.users.createOrUpdateUser);
+  const pathname = usePathname();
+  const [synced, setSynced] = useState(false);
+
+  useEffect(() => {
+    if (isLoaded && user && !synced) {
+      createOrUpdateUser({
+        clerkId: user.id,
+        name: user.fullName || user.firstName || "User",
+        email: user.primaryEmailAddress?.emailAddress || "",
+        imageUrl: user.imageUrl,
+      }).then(() => setSynced(true))
+        .catch(console.error);
+    }
+  }, [isLoaded, user, synced, createOrUpdateUser]);
 
   return (
     <div className="flex min-h-screen w-full flex-col bg-muted/20">
@@ -70,7 +72,7 @@ export function DashboardWrapper({ children }) {
           </SheetTrigger>
           <SheetContent side="left" className="w-64 pt-10">
             <nav className="flex flex-col gap-2">
-              <NavLinks />
+              <DashboardNavLinks pathname={pathname} />
             </nav>
           </SheetContent>
         </Sheet>
@@ -86,7 +88,7 @@ export function DashboardWrapper({ children }) {
         {/* Sidebar for Desktop */}
         <aside className="hidden md:flex w-64 flex-col border-r bg-background pt-4">
           <nav className="flex-1 px-4">
-            <NavLinks />
+            <DashboardNavLinks pathname={pathname} />
           </nav>
         </aside>
 

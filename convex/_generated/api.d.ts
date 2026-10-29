@@ -11,6 +11,7 @@
 import type * as courses from "../courses.js";
 import type * as http from "../http.js";
 import type * as ingestion from "../ingestion.js";
+import type * as knowledgeGraph from "../knowledgeGraph.js";
 import type * as sources from "../sources.js";
 import type * as tutor from "../tutor.js";
 import type * as users from "../users.js";
@@ -25,6 +26,7 @@ declare const fullApi: ApiFromModules<{
   courses: typeof courses;
   http: typeof http;
   ingestion: typeof ingestion;
+  knowledgeGraph: typeof knowledgeGraph;
   sources: typeof sources;
   tutor: typeof tutor;
   users: typeof users;

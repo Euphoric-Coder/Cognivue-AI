@@ -1,30 +1,26 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 
-async function requireUser(ctx) {
+async function getCurrentUser(ctx) {
   const identity = await ctx.auth.getUserIdentity();
-  if (!identity) throw new Error("Unauthorized");
+  if (!identity) return null;
   
-  const user = await ctx.db
+  return await ctx.db
     .query("users")
     .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
     .unique();
-    
-  if (!user) throw new Error("User not found");
+}
+
+async function requireUser(ctx) {
+  const user = await getCurrentUser(ctx);
+  if (!user) throw new Error("Unauthorized");
   return user;
 }
 
 export const getUserCourses = query({
   args: {},
   handler: async (ctx) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) return [];
-
-    const user = await ctx.db
-      .query("users")
-      .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
-      .unique();
-      
+    const user = await getCurrentUser(ctx);
     if (!user) return [];
 
     const courses = await ctx.db
@@ -40,11 +36,11 @@ export const getUserCourses = query({
 export const getCourseById = query({
   args: { courseId: v.id("courses") },
   handler: async (ctx, args) => {
-    const user = await requireUser(ctx);
+    const user = await getCurrentUser(ctx);
+    if (!user) return null;
+
     const course = await ctx.db.get(args.courseId);
-    
-    if (!course) throw new Error("Course not found");
-    if (course.userId !== user._id) throw new Error("Unauthorized access to course");
+    if (!course || course.userId !== user._id) return null;
     
     return course;
   },

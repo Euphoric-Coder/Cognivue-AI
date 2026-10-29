@@ -6,13 +6,13 @@ export const getSessions = query({
   args: { courseId: v.id("courses") },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
-    if (!identity) throw new Error("Unauthorized");
+    if (!identity) return [];
     
     const user = await ctx.db
       .query("users")
       .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
       .unique();
-    if (!user) throw new Error("User not found");
+    if (!user) return [];
 
     const sessions = await ctx.db
       .query("tutorSessions")
@@ -28,7 +28,7 @@ export const getMessages = query({
   args: { sessionId: v.id("tutorSessions") },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
-    if (!identity) throw new Error("Unauthorized");
+    if (!identity) return [];
     
     const messages = await ctx.db
       .query("tutorMessages")

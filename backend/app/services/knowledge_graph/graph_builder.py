@@ -42,8 +42,10 @@ class KnowledgeGraphBuilder:
         payload = {
             "courseId": course_id,
             "status": status,
-            "error": error,
         }
+        if error:
+            payload["error"] = error
+
         try:
             res = requests.post(url, json=payload, headers=headers)
             res.raise_for_status()
@@ -165,22 +167,33 @@ class KnowledgeGraphBuilder:
             for c in normalized_concepts:
                 temp_id = c["tempId"]
                 for ev in c.get("evidence", []):
-                    flattened_evidence.append({
+                    item = {
                         "conceptTempId": temp_id,
                         "sourceId": ev.get("sourceId"),
                         "sourceName": ev.get("sourceName", "Course Material"),
                         "evidenceType": ev.get("evidenceType", "text"),
-                        "sourceChunkId": ev.get("sourceChunkId"),
-                        "sourceVisualId": ev.get("sourceVisualId"),
-                        "pageNumber": ev.get("pageNumber"),
-                        "slideNumber": ev.get("slideNumber"),
-                        "startTime": ev.get("startTime"),
-                        "endTime": ev.get("endTime"),
-                        "visualType": ev.get("visualType"),
-                        "imageUrl": ev.get("imageUrl"),
                         "excerpt": ev.get("excerpt", "")[:400],
                         "confidence": ev.get("confidence", "high"),
-                    })
+                    }
+                    if ev.get("sourceChunkId"):
+                        item["sourceChunkId"] = ev["sourceChunkId"]
+                    if ev.get("sourceVisualId"):
+                        item["sourceVisualId"] = ev["sourceVisualId"]
+                    if ev.get("pageNumber") is not None:
+                        item["pageNumber"] = float(ev["pageNumber"])
+                    if ev.get("slideNumber") is not None:
+                        item["slideNumber"] = float(ev["slideNumber"])
+                    if ev.get("startTime") is not None:
+                        item["startTime"] = float(ev["startTime"])
+                    if ev.get("endTime") is not None:
+                        item["endTime"] = float(ev["endTime"])
+                    if ev.get("visualType"):
+                        item["visualType"] = ev["visualType"]
+                    if ev.get("imageUrl"):
+                        item["imageUrl"] = ev["imageUrl"]
+                    if ev.get("confidenceScore") is not None:
+                        item["confidenceScore"] = float(ev["confidenceScore"])
+                    flattened_evidence.append(item)
 
             # 4. Stage 3: Infer Grounded Relationships
             raw_relationships = self.relationship_extractor.extract_relationships(
@@ -199,10 +212,12 @@ class KnowledgeGraphBuilder:
                 f"KG_VALIDATION: validConcepts={len(valid_concepts)}, validRelationships={len(valid_relationships)}, validEvidence={len(valid_evidence)}"
             )
 
+            canonical_user_id = str(course.get("userId") or user_id)
+
             # 6. Stage 5: Save Atomically to Convex
             save_result = self._save_to_convex(
                 course_id=course_id,
-                user_id=user_id,
+                user_id=canonical_user_id,
                 snapshot_hash=snapshot_hash,
                 concepts=valid_concepts,
                 relationships=valid_relationships,
@@ -239,13 +254,84 @@ class KnowledgeGraphBuilder:
         """Calls Convex HTTP or mutation to save the graph transactionally."""
         url = f"{settings.convex_site_url}/knowledge-graph/save"
         headers = {"x-ingestion-secret": settings.ingestion_api_secret}
+
+        # Sanitize concepts payload so internal nested evidence is not duplicated/sent to Convex
+        clean_concepts = []
+        for c in concepts:
+            clean_c = {
+                "tempId": c["tempId"],
+                "name": c["name"],
+                "normalizedName": c["normalizedName"],
+                "description": c.get("description", ""),
+                "type": c.get("type", "concept"),
+                "importance": c.get("importance", "supporting"),
+                "sourceCount": float(c.get("sourceCount", 0)),
+                "evidenceCount": float(c.get("evidenceCount", 0)),
+                "aliases": c.get("aliases", []),
+                "masteryEligible": bool(c.get("masteryEligible", True)),
+            }
+            clean_concepts.append(clean_c)
+
+        clean_relationships = []
+        for r in relationships:
+            clean_r = {
+                "fromTempId": r["fromTempId"],
+                "toTempId": r["toTempId"],
+                "relationType": r["relationType"],
+                "confidence": r.get("confidence", "medium"),
+            }
+            if r.get("fromConceptName"):
+                clean_r["fromConceptName"] = r["fromConceptName"]
+            if r.get("toConceptName"):
+                clean_r["toConceptName"] = r["toConceptName"]
+            if r.get("confidenceScore") is not None:
+                clean_r["confidenceScore"] = float(r["confidenceScore"])
+            if r.get("explanation"):
+                clean_r["explanation"] = r["explanation"]
+            if r.get("evidenceSummary"):
+                clean_r["evidenceSummary"] = r["evidenceSummary"]
+            if r.get("evidenceIds"):
+                clean_r["evidenceIds"] = r["evidenceIds"]
+            clean_relationships.append(clean_r)
+
+        clean_evidence = []
+        for ev in evidence:
+            clean_ev = {
+                "conceptTempId": ev["conceptTempId"],
+                "sourceId": ev["sourceId"],
+                "sourceName": ev.get("sourceName", "Course Material"),
+                "evidenceType": ev.get("evidenceType", "text"),
+                "excerpt": ev.get("excerpt", "")[:400],
+            }
+            if ev.get("sourceChunkId"):
+                clean_ev["sourceChunkId"] = ev["sourceChunkId"]
+            if ev.get("sourceVisualId"):
+                clean_ev["sourceVisualId"] = ev["sourceVisualId"]
+            if ev.get("pageNumber") is not None:
+                clean_ev["pageNumber"] = float(ev["pageNumber"])
+            if ev.get("slideNumber") is not None:
+                clean_ev["slideNumber"] = float(ev["slideNumber"])
+            if ev.get("startTime") is not None:
+                clean_ev["startTime"] = float(ev["startTime"])
+            if ev.get("endTime") is not None:
+                clean_ev["endTime"] = float(ev["endTime"])
+            if ev.get("visualType"):
+                clean_ev["visualType"] = ev["visualType"]
+            if ev.get("imageUrl"):
+                clean_ev["imageUrl"] = ev["imageUrl"]
+            if ev.get("confidence"):
+                clean_ev["confidence"] = ev["confidence"]
+            if ev.get("confidenceScore") is not None:
+                clean_ev["confidenceScore"] = float(ev["confidenceScore"])
+            clean_evidence.append(clean_ev)
+
         payload = {
             "courseId": course_id,
             "userId": user_id,
             "snapshotHash": snapshot_hash,
-            "concepts": concepts,
-            "relationships": relationships,
-            "evidence": evidence,
+            "concepts": clean_concepts,
+            "relationships": clean_relationships,
+            "evidence": clean_evidence,
         }
 
         try:

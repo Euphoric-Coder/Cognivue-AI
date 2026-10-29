@@ -19,22 +19,10 @@ import { api } from "@/convex/_generated/api";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Menu } from "lucide-react";
 
-export function CourseWorkspaceNav({ courseId }) {
-  const pathname = usePathname();
-  const course = useQuery(api.courses.getCourseById, { courseId });
-
-  const navItems = [
-    { name: "Overview", href: `/dashboard/courses/${courseId}`, icon: LayoutDashboard },
-    { name: "Sources", href: `/dashboard/courses/${courseId}/sources`, icon: Library },
-    { name: "AI Tutor", href: `/dashboard/courses/${courseId}/tutor`, icon: MessageSquare },
-    { name: "Assessments", href: `/dashboard/courses/${courseId}/assessments`, icon: FileCheck2 },
-    { name: "Knowledge Map", href: `/dashboard/courses/${courseId}/knowledge-map`, icon: Network },
-    { name: "Progress", href: `/dashboard/courses/${courseId}/progress`, icon: TrendingUp },
-  ];
-
-  const NavLinks = () => (
+function NavLinks({ items, pathname }) {
+  return (
     <nav className="flex-1 space-y-1 px-3">
-      {navItems.map((item) => {
+      {items.map((item) => {
         const isActive = pathname === item.href;
         const Icon = item.icon;
         return (
@@ -51,6 +39,20 @@ export function CourseWorkspaceNav({ courseId }) {
       })}
     </nav>
   );
+}
+
+export function CourseWorkspaceNav({ courseId }) {
+  const pathname = usePathname();
+  const course = useQuery(api.courses.getCourseById, { courseId });
+
+  const navItems = [
+    { name: "Overview", href: `/dashboard/courses/${courseId}`, icon: LayoutDashboard },
+    { name: "Sources", href: `/dashboard/courses/${courseId}/sources`, icon: Library },
+    { name: "AI Tutor", href: `/dashboard/courses/${courseId}/tutor`, icon: MessageSquare },
+    { name: "Assessments", href: `/dashboard/courses/${courseId}/assessments`, icon: FileCheck2 },
+    { name: "Knowledge Map", href: `/dashboard/courses/${courseId}/knowledge-map`, icon: Network },
+    { name: "Progress", href: `/dashboard/courses/${courseId}/progress`, icon: TrendingUp },
+  ];
 
   return (
     <>
@@ -73,7 +75,7 @@ export function CourseWorkspaceNav({ courseId }) {
                 {course ? course.name : "Loading..."}
               </h2>
             </div>
-            <NavLinks />
+            <NavLinks items={navItems} pathname={pathname} />
           </SheetContent>
         </Sheet>
         <h2 className="font-semibold text-sm line-clamp-1 flex-1">
@@ -98,7 +100,7 @@ export function CourseWorkspaceNav({ courseId }) {
           )}
         </div>
         
-        <NavLinks />
+        <NavLinks items={navItems} pathname={pathname} />
       </div>
     </>
   );

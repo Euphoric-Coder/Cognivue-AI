@@ -5,8 +5,8 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 class Settings(BaseSettings):
     ingestion_api_secret: str = os.getenv("INGESTION_API_SECRET", "secret-dev-key")
-    convex_url: str = os.getenv("NEXT_PUBLIC_CONVEX_URL", "https://effervescent-ocelot-139.convex.cloud")
-    convex_site_url: str = os.getenv("CONVEX_SITE_URL", "https://effervescent-ocelot-139.convex.site")
+    convex_url: str = os.getenv("NEXT_PUBLIC_CONVEX_URL", "https://marvelous-capybara-683.convex.cloud")
+    convex_site_url: str = os.getenv("CONVEX_SITE_URL", "https://marvelous-capybara-683.convex.site")
     gemini_api_key: str = os.getenv("GEMINI_API_KEY", "")
     embedding_model: str = os.getenv("EMBEDDING_MODEL", "gemini-embedding-2")
     llm_model: str = os.getenv("LLM_MODEL", "gemini-3.6-flash")

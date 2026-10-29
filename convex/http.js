@@ -191,7 +191,7 @@ http.route({
     await ctx.runMutation(api.knowledgeGraph.updateGraphStatusBackend, {
       courseId,
       status,
-      error,
+      error: error || undefined,
     });
 
     return new Response("OK", { status: 200 });

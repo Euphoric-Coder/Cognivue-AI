@@ -1,16 +1,19 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 
-async function requireUser(ctx) {
+async function getCurrentUser(ctx) {
   const identity = await ctx.auth.getUserIdentity();
-  if (!identity) throw new Error("Unauthorized");
+  if (!identity) return null;
   
-  const user = await ctx.db
+  return await ctx.db
     .query("users")
     .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
     .unique();
-    
-  if (!user) throw new Error("User not found");
+}
+
+async function requireUser(ctx) {
+  const user = await getCurrentUser(ctx);
+  if (!user) throw new Error("Unauthorized");
   return user;
 }
 
@@ -22,12 +25,13 @@ export const generateUploadUrl = mutation(async (ctx) => {
 export const getCourseSources = query({
   args: { courseId: v.id("courses") },
   handler: async (ctx, args) => {
-    const user = await requireUser(ctx);
+    const user = await getCurrentUser(ctx);
+    if (!user) return [];
     
     // Check course ownership
     const course = await ctx.db.get(args.courseId);
     if (!course || course.userId !== user._id) {
-      throw new Error("Unauthorized");
+      return [];
     }
     
     const sources = await ctx.db
@@ -190,7 +194,8 @@ export const updateSource = mutation({
 export const getSource = query({
   args: { sourceId: v.id("sources") },
   handler: async (ctx, args) => {
-    const user = await requireUser(ctx);
+    const user = await getCurrentUser(ctx);
+    if (!user) return null;
     const source = await ctx.db.get(args.sourceId);
     
     if (!source || source.userId !== user._id) return null;
@@ -202,7 +207,8 @@ export const getSource = query({
 export const getSourceChunks = query({
   args: { sourceId: v.id("sources") },
   handler: async (ctx, args) => {
-    const user = await requireUser(ctx);
+    const user = await getCurrentUser(ctx);
+    if (!user) return [];
     const source = await ctx.db.get(args.sourceId);
     
     if (!source || source.userId !== user._id) return [];
@@ -225,7 +231,8 @@ export const getSourceChunks = query({
 export const getTranscriptSegments = query({
   args: { sourceId: v.id("sources") },
   handler: async (ctx, args) => {
-    const user = await requireUser(ctx);
+    const user = await getCurrentUser(ctx);
+    if (!user) return [];
     const source = await ctx.db.get(args.sourceId);
     
     if (!source || source.userId !== user._id) return [];
@@ -242,7 +249,8 @@ export const getTranscriptSegments = query({
 export const getSourceVisuals = query({
   args: { sourceId: v.id("sources") },
   handler: async (ctx, args) => {
-    const user = await requireUser(ctx);
+    const user = await getCurrentUser(ctx);
+    if (!user) return [];
     const source = await ctx.db.get(args.sourceId);
     
     if (!source || source.userId !== user._id) return [];
@@ -263,9 +271,10 @@ export const getSourceVisuals = query({
 export const getCourseVisualMetrics = query({
   args: { courseId: v.id("courses") },
   handler: async (ctx, args) => {
-    const user = await requireUser(ctx);
+    const user = await getCurrentUser(ctx);
+    if (!user) return null;
     const course = await ctx.db.get(args.courseId);
-    if (!course || course.userId !== user._id) throw new Error("Unauthorized");
+    if (!course || course.userId !== user._id) return null;
 
     const visuals = await ctx.db
       .query("sourceVisuals")
