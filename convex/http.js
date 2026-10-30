@@ -217,4 +217,63 @@ http.route({
   }),
 });
 
+// V7 Grounded Assessment Engine HTTP Endpoints
+http.route({
+  path: "/assessment/save",
+  method: "POST",
+  handler: httpAction(async (ctx, request) => {
+    const signature = request.headers.get("x-ingestion-secret");
+    if (signature !== (process.env.INGESTION_API_SECRET || "secret-dev-key")) {
+      return new Response("Unauthorized", { status: 401 });
+    }
+
+    const body = await request.json();
+    const result = await ctx.runMutation(api.assessments.saveGeneratedAssessmentBackend, body);
+
+    return new Response(JSON.stringify(result), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    });
+  }),
+});
+
+http.route({
+  path: "/assessment/status",
+  method: "POST",
+  handler: httpAction(async (ctx, request) => {
+    const signature = request.headers.get("x-ingestion-secret");
+    if (signature !== (process.env.INGESTION_API_SECRET || "secret-dev-key")) {
+      return new Response("Unauthorized", { status: 401 });
+    }
+
+    const { assessmentId, status, error } = await request.json();
+    await ctx.runMutation(api.assessments.updateAssessmentStatus, {
+      assessmentId,
+      status,
+      error: error || undefined,
+    });
+
+    return new Response("OK", { status: 200 });
+  }),
+});
+
+http.route({
+  path: "/assessment/grade-result",
+  method: "POST",
+  handler: httpAction(async (ctx, request) => {
+    const signature = request.headers.get("x-ingestion-secret");
+    if (signature !== (process.env.INGESTION_API_SECRET || "secret-dev-key")) {
+      return new Response("Unauthorized", { status: 401 });
+    }
+
+    const body = await request.json();
+    const result = await ctx.runMutation(api.assessments.gradeAttemptBackend, body);
+
+    return new Response(JSON.stringify(result), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    });
+  }),
+});
+
 export default http;

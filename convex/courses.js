@@ -159,6 +159,39 @@ export const deleteCourse = mutation({
     for (const c of existingConcepts) {
       await ctx.db.delete(c._id);
     }
+
+    // Cascade delete V7 Assessment Engine tables
+    const existingResponses = await ctx.db
+      .query("assessmentResponses")
+      .withIndex("by_course", (q) => q.eq("courseId", args.courseId))
+      .collect();
+    for (const r of existingResponses) {
+      await ctx.db.delete(r._id);
+    }
+
+    const existingAttempts = await ctx.db
+      .query("assessmentAttempts")
+      .withIndex("by_course", (q) => q.eq("courseId", args.courseId))
+      .collect();
+    for (const a of existingAttempts) {
+      await ctx.db.delete(a._id);
+    }
+
+    const existingQuestions = await ctx.db
+      .query("assessmentQuestions")
+      .withIndex("by_course", (q) => q.eq("courseId", args.courseId))
+      .collect();
+    for (const q of existingQuestions) {
+      await ctx.db.delete(q._id);
+    }
+
+    const existingAssessments = await ctx.db
+      .query("assessments")
+      .withIndex("by_course", (q) => q.eq("courseId", args.courseId))
+      .collect();
+    for (const ass of existingAssessments) {
+      await ctx.db.delete(ass._id);
+    }
     
     // Delete the course
     await ctx.db.delete(args.courseId);

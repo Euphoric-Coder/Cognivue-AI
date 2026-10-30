@@ -4,7 +4,7 @@ import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { use } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Library, Network, Target, MessageSquare, CheckCircle2, Circle, Image as ImageIcon } from "lucide-react";
+import { Library, Network, Target, MessageSquare, CheckCircle2, Circle, Image as ImageIcon, FileCheck2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,7 @@ export default function CourseOverviewPage({ params }) {
   const sources = useQuery(api.sources.getCourseSources, { courseId });
   const visualMetrics = useQuery(api.sources.getCourseVisualMetrics, { courseId });
   const graphMetrics = useQuery(api.knowledgeGraph.getCourseGraphMetrics, { courseId });
+  const assessmentMetrics = useQuery(api.assessments.getCourseAssessmentMetrics, { courseId });
 
   if (course === undefined || sources === undefined) {
     return (
@@ -53,7 +54,7 @@ export default function CourseOverviewPage({ params }) {
         </p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+      <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Learning Sources</CardTitle>
@@ -127,6 +128,23 @@ export default function CourseOverviewPage({ params }) {
                 {graphMetrics && graphMetrics.conceptCount > 0
                   ? `${graphMetrics.relationshipCount} links · ${graphMetrics.prerequisiteCount} prerequisites`
                   : "Explore concepts & links →"}
+              </p>
+            </CardContent>
+          </Link>
+        </Card>
+
+        <Card className="hover:border-primary/50 transition-colors">
+          <Link href={`/dashboard/courses/${courseId}/assessments`}>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Assessments</CardTitle>
+              <FileCheck2 className="h-4 w-4 text-emerald-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{assessmentMetrics?.totalAssessments ?? 0}</div>
+              <p className="text-xs text-muted-foreground line-clamp-1">
+                {assessmentMetrics
+                  ? `${assessmentMetrics.totalQuestionsGenerated} questions · ${assessmentMetrics.completedAttemptsCount} completed`
+                  : "Grounded tests & quizzes →"}
               </p>
             </CardContent>
           </Link>
