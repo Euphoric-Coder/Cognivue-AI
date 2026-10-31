@@ -182,7 +182,7 @@ export default function AssessmentsPage({ params }) {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {metrics?.averagePercentage !== null ? `${metrics.averagePercentage}%` : "—"}
+              {typeof metrics?.averagePercentage === "number" ? `${metrics.averagePercentage}%` : "—"}
             </div>
             <p className="text-xs text-muted-foreground mt-1">Across all attempts</p>
           </CardContent>

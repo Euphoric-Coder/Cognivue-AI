@@ -140,13 +140,18 @@ export default function NewAssessmentPage({ params }) {
         setGenerationStep((prev) => (prev < generationSteps.length - 1 ? prev + 1 : prev));
       }, 1800);
 
+      const effectiveConceptIds =
+        conceptSelectionMode === "specific"
+          ? selectedConceptIds
+          : (concepts || []).map((c) => c._id);
+
       // 1. Create assessment record in Convex with status 'generating'
       const assessmentId = await createAssessment({
         courseId,
         title: effectiveTitle,
         description: `Grounded ${assessmentType.replace("_", " ")} with ${questionCount} questions at ${difficulty} difficulty.`,
         assessmentType,
-        selectedConceptIds: conceptSelectionMode === "specific" ? selectedConceptIds : undefined,
+        selectedConceptIds: effectiveConceptIds,
         difficulty,
         questionCount: Number(questionCount),
         questionTypeConfig: selectedQuestionTypes,
@@ -164,7 +169,7 @@ export default function NewAssessmentPage({ params }) {
           courseId,
           title: effectiveTitle,
           assessmentType,
-          selectedConceptIds: conceptSelectionMode === "specific" ? selectedConceptIds : [],
+          selectedConceptIds: effectiveConceptIds,
           difficulty,
           questionCount: Number(questionCount),
           questionTypeConfig: selectedQuestionTypes,

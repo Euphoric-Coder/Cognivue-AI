@@ -310,23 +310,29 @@ export const createAssessment = mutation({
   args: {
     courseId: v.id("courses"),
     title: v.string(),
-    description: v.optional(v.string()),
+    description: v.optional(v.union(v.string(), v.null())),
     assessmentType: v.string(), // "practice" | "topic_quiz" | "mixed_quiz" | "mock_exam"
-    selectedConceptIds: v.array(v.id("courseConcepts")),
-    selectedConceptNames: v.optional(v.array(v.string())),
+    selectedConceptIds: v.optional(v.union(v.array(v.id("courseConcepts")), v.null())),
+    selectedConceptNames: v.optional(v.union(v.array(v.string()), v.null())),
     difficulty: v.string(), // "easy" | "medium" | "hard" | "mixed"
     questionCount: v.number(),
-    questionTypeConfig: v.object({
-      mcq: v.boolean(),
-      multiple_select: v.boolean(),
-      true_false: v.boolean(),
-      short_answer: v.boolean(),
-      numerical: v.boolean(),
-      concept_explanation: v.boolean(),
-    }),
-    timeLimitMinutes: v.optional(v.number()),
-    shuffleQuestions: v.optional(v.boolean()),
-    shuffleOptions: v.optional(v.boolean()),
+    questionTypeConfig: v.optional(
+      v.union(
+        v.array(v.string()),
+        v.object({
+          mcq: v.boolean(),
+          multiple_select: v.boolean(),
+          true_false: v.boolean(),
+          short_answer: v.boolean(),
+          numerical: v.boolean(),
+          concept_explanation: v.boolean(),
+        }),
+        v.null()
+      )
+    ),
+    timeLimitMinutes: v.optional(v.union(v.number(), v.null())),
+    shuffleQuestions: v.optional(v.union(v.boolean(), v.null())),
+    shuffleOptions: v.optional(v.union(v.boolean(), v.null())),
   },
   handler: async (ctx, args) => {
     const user = await requireUser(ctx);
@@ -337,15 +343,15 @@ export const createAssessment = mutation({
       userId: user._id,
       courseId: args.courseId,
       title: args.title,
-      description: args.description,
+      description: args.description || undefined,
       assessmentType: args.assessmentType,
       status: "generating",
-      selectedConceptIds: args.selectedConceptIds,
-      selectedConceptNames: args.selectedConceptNames,
+      selectedConceptIds: args.selectedConceptIds || [],
+      selectedConceptNames: args.selectedConceptNames || undefined,
       difficulty: args.difficulty,
       questionCount: args.questionCount,
-      questionTypeConfig: args.questionTypeConfig,
-      timeLimitMinutes: args.timeLimitMinutes,
+      questionTypeConfig: args.questionTypeConfig || undefined,
+      timeLimitMinutes: args.timeLimitMinutes || undefined,
       shuffleQuestions: args.shuffleQuestions ?? true,
       shuffleOptions: args.shuffleOptions ?? true,
       courseSnapshotHash: course.sourceSnapshotHash,
@@ -362,7 +368,7 @@ export const updateAssessmentStatus = mutation({
   args: {
     assessmentId: v.id("assessments"),
     status: v.string(),
-    error: v.optional(v.string()),
+    error: v.optional(v.union(v.string(), v.null())),
   },
   handler: async (ctx, args) => {
     const assessment = await ctx.db.get(args.assessmentId);
@@ -370,7 +376,7 @@ export const updateAssessmentStatus = mutation({
 
     await ctx.db.patch(args.assessmentId, {
       status: args.status,
-      error: args.error,
+      error: args.error || undefined,
       updatedAt: Date.now(),
     });
   },
@@ -437,47 +443,47 @@ export const saveGeneratedAssessmentBackend = mutation({
   args: {
     assessmentId: v.id("assessments"),
     status: v.string(), // "ready" | "draft" | "failed"
-    error: v.optional(v.string()),
-    generationVersion: v.optional(v.number()),
+    error: v.optional(v.union(v.string(), v.null())),
+    generationVersion: v.optional(v.union(v.number(), v.null())),
     questions: v.array(
       v.object({
         questionIndex: v.number(),
         questionType: v.string(),
         questionText: v.string(),
-        options: v.optional(v.array(v.string())),
+        options: v.optional(v.union(v.array(v.string()), v.null())),
         correctAnswer: v.any(),
-        acceptedAnswers: v.optional(v.array(v.string())),
-        referenceAnswer: v.optional(v.string()),
-        requiredKeyPoints: v.optional(v.array(v.string())),
-        optionalKeyPoints: v.optional(v.array(v.string())),
-        misconceptionIndicators: v.optional(v.array(v.string())),
-        rubric: v.optional(v.array(v.object({
+        acceptedAnswers: v.optional(v.union(v.array(v.string()), v.null())),
+        referenceAnswer: v.optional(v.union(v.string(), v.null())),
+        requiredKeyPoints: v.optional(v.union(v.array(v.string()), v.null())),
+        optionalKeyPoints: v.optional(v.union(v.array(v.string()), v.null())),
+        misconceptionIndicators: v.optional(v.union(v.array(v.string()), v.null())),
+        rubric: v.optional(v.union(v.array(v.object({
           points: v.number(),
           criterion: v.string(),
-        }))),
+        })), v.null())),
         explanation: v.string(),
         difficulty: v.string(),
         conceptIds: v.array(v.id("courseConcepts")),
-        conceptNames: v.optional(v.array(v.string())),
+        conceptNames: v.optional(v.union(v.array(v.string()), v.null())),
         sourceEvidence: v.array(v.object({
           sourceId: v.string(),
           sourceName: v.string(),
           evidenceType: v.string(),
-          locationType: v.optional(v.string()),
-          sourceChunkId: v.optional(v.string()),
-          sourceVisualId: v.optional(v.string()),
-          pageNumber: v.optional(v.number()),
-          slideNumber: v.optional(v.number()),
-          startTime: v.optional(v.number()),
-          endTime: v.optional(v.number()),
-          visualType: v.optional(v.string()),
-          imageUrl: v.optional(v.string()),
+          locationType: v.optional(v.union(v.string(), v.null())),
+          sourceChunkId: v.optional(v.union(v.string(), v.null())),
+          sourceVisualId: v.optional(v.union(v.string(), v.null())),
+          pageNumber: v.optional(v.union(v.number(), v.null())),
+          slideNumber: v.optional(v.union(v.number(), v.null())),
+          startTime: v.optional(v.union(v.number(), v.null())),
+          endTime: v.optional(v.union(v.number(), v.null())),
+          visualType: v.optional(v.union(v.string(), v.null())),
+          imageUrl: v.optional(v.union(v.string(), v.null())),
           excerpt: v.string(),
         })),
-        sourceVisualId: v.optional(v.id("sourceVisuals")),
-        sourceVisualUrl: v.optional(v.string()),
+        sourceVisualId: v.optional(v.union(v.id("sourceVisuals"), v.string(), v.null())),
+        sourceVisualUrl: v.optional(v.union(v.string(), v.null())),
         points: v.number(),
-        qualityScore: v.optional(v.number()),
+        qualityScore: v.optional(v.union(v.number(), v.null())),
       })
     ),
   },
@@ -497,7 +503,7 @@ export const saveGeneratedAssessmentBackend = mutation({
     // 2. Insert new questions
     let totalPoints = 0;
     for (const q of args.questions) {
-      totalPoints += q.points;
+      totalPoints += (typeof q.points === "number" ? q.points : 1);
       await ctx.db.insert("assessmentQuestions", {
         userId: assessment.userId,
         courseId: assessment.courseId,
@@ -505,23 +511,37 @@ export const saveGeneratedAssessmentBackend = mutation({
         questionIndex: q.questionIndex,
         questionType: q.questionType,
         questionText: q.questionText,
-        options: q.options,
+        options: q.options || undefined,
         correctAnswer: q.correctAnswer,
-        acceptedAnswers: q.acceptedAnswers,
-        referenceAnswer: q.referenceAnswer,
-        requiredKeyPoints: q.requiredKeyPoints,
-        optionalKeyPoints: q.optionalKeyPoints,
-        misconceptionIndicators: q.misconceptionIndicators,
-        rubric: q.rubric,
-        explanation: q.explanation,
-        difficulty: q.difficulty,
-        conceptIds: q.conceptIds,
-        conceptNames: q.conceptNames,
-        sourceEvidence: q.sourceEvidence,
-        sourceVisualId: q.sourceVisualId,
-        sourceVisualUrl: q.sourceVisualUrl,
-        points: q.points,
-        qualityScore: q.qualityScore,
+        acceptedAnswers: q.acceptedAnswers || undefined,
+        referenceAnswer: q.referenceAnswer || undefined,
+        requiredKeyPoints: q.requiredKeyPoints || undefined,
+        optionalKeyPoints: q.optionalKeyPoints || undefined,
+        misconceptionIndicators: q.misconceptionIndicators || undefined,
+        rubric: q.rubric || undefined,
+        explanation: q.explanation || "",
+        difficulty: q.difficulty || "medium",
+        conceptIds: q.conceptIds || [],
+        conceptNames: q.conceptNames || undefined,
+        sourceEvidence: (q.sourceEvidence || []).map((ev) => ({
+          sourceId: ev.sourceId,
+          sourceName: ev.sourceName,
+          evidenceType: ev.evidenceType,
+          locationType: ev.locationType || undefined,
+          sourceChunkId: ev.sourceChunkId || undefined,
+          sourceVisualId: ev.sourceVisualId || undefined,
+          pageNumber: typeof ev.pageNumber === "number" ? ev.pageNumber : undefined,
+          slideNumber: typeof ev.slideNumber === "number" ? ev.slideNumber : undefined,
+          startTime: typeof ev.startTime === "number" ? ev.startTime : undefined,
+          endTime: typeof ev.endTime === "number" ? ev.endTime : undefined,
+          visualType: ev.visualType || undefined,
+          imageUrl: ev.imageUrl || undefined,
+          excerpt: ev.excerpt || "",
+        })),
+        sourceVisualId: q.sourceVisualId || undefined,
+        sourceVisualUrl: q.sourceVisualUrl || undefined,
+        points: typeof q.points === "number" ? q.points : 1,
+        qualityScore: typeof q.qualityScore === "number" ? q.qualityScore : undefined,
         generationVersion: args.generationVersion || 1,
         createdAt: Date.now(),
       });
@@ -530,7 +550,7 @@ export const saveGeneratedAssessmentBackend = mutation({
     // 3. Patch assessment
     await ctx.db.patch(args.assessmentId, {
       status: args.status,
-      error: args.error,
+      error: args.error || undefined,
       generatedQuestionCount: args.questions.length,
       totalPoints,
       estimatedDurationMinutes: Math.ceil(args.questions.length * 1.5),
@@ -546,6 +566,7 @@ export const removeQuestion = mutation({
   args: {
     assessmentId: v.id("assessments"),
     questionId: v.id("assessmentQuestions"),
+    courseId: v.optional(v.union(v.id("courses"), v.string(), v.null())),
   },
   handler: async (ctx, args) => {
     const user = await requireUser(ctx);
@@ -589,39 +610,39 @@ export const updateQuestion = mutation({
   args: {
     questionId: v.id("assessmentQuestions"),
     questionText: v.string(),
-    options: v.optional(v.array(v.string())),
+    options: v.optional(v.union(v.array(v.string()), v.null())),
     correctAnswer: v.any(),
-    acceptedAnswers: v.optional(v.array(v.string())),
-    referenceAnswer: v.optional(v.string()),
-    requiredKeyPoints: v.optional(v.array(v.string())),
-    optionalKeyPoints: v.optional(v.array(v.string())),
-    misconceptionIndicators: v.optional(v.array(v.string())),
-    rubric: v.optional(v.array(v.object({
+    acceptedAnswers: v.optional(v.union(v.array(v.string()), v.null())),
+    referenceAnswer: v.optional(v.union(v.string(), v.null())),
+    requiredKeyPoints: v.optional(v.union(v.array(v.string()), v.null())),
+    optionalKeyPoints: v.optional(v.union(v.array(v.string()), v.null())),
+    misconceptionIndicators: v.optional(v.union(v.array(v.string()), v.null())),
+    rubric: v.optional(v.union(v.array(v.object({
       points: v.number(),
       criterion: v.string(),
-    }))),
+    })), v.null())),
     explanation: v.string(),
     difficulty: v.string(),
     conceptIds: v.array(v.id("courseConcepts")),
-    conceptNames: v.optional(v.array(v.string())),
+    conceptNames: v.optional(v.union(v.array(v.string()), v.null())),
     sourceEvidence: v.array(v.object({
       sourceId: v.string(),
       sourceName: v.string(),
       evidenceType: v.string(),
-      locationType: v.optional(v.string()),
-      sourceChunkId: v.optional(v.string()),
-      sourceVisualId: v.optional(v.string()),
-      pageNumber: v.optional(v.number()),
-      slideNumber: v.optional(v.number()),
-      startTime: v.optional(v.number()),
-      endTime: v.optional(v.number()),
-      visualType: v.optional(v.string()),
-      imageUrl: v.optional(v.string()),
+      locationType: v.optional(v.union(v.string(), v.null())),
+      sourceChunkId: v.optional(v.union(v.string(), v.null())),
+      sourceVisualId: v.optional(v.union(v.string(), v.null())),
+      pageNumber: v.optional(v.union(v.number(), v.null())),
+      slideNumber: v.optional(v.union(v.number(), v.null())),
+      startTime: v.optional(v.union(v.number(), v.null())),
+      endTime: v.optional(v.union(v.number(), v.null())),
+      visualType: v.optional(v.union(v.string(), v.null())),
+      imageUrl: v.optional(v.union(v.string(), v.null())),
       excerpt: v.string(),
     })),
-    sourceVisualId: v.optional(v.id("sourceVisuals")),
-    sourceVisualUrl: v.optional(v.string()),
-    qualityScore: v.optional(v.number()),
+    sourceVisualId: v.optional(v.union(v.id("sourceVisuals"), v.string(), v.null())),
+    sourceVisualUrl: v.optional(v.union(v.string(), v.null())),
+    qualityScore: v.optional(v.union(v.number(), v.null())),
   },
   handler: async (ctx, args) => {
     const user = await requireUser(ctx);
@@ -629,16 +650,76 @@ export const updateQuestion = mutation({
     if (!question || question.userId !== user._id) throw new Error("Unauthorized");
 
     const { questionId, ...updates } = args;
-    await ctx.db.patch(questionId, {
-      ...updates,
-    });
+    const cleanUpdates = {};
+    for (const [k, v] of Object.entries(updates)) {
+      if (v !== null && v !== undefined) {
+        cleanUpdates[k] = v;
+      }
+    }
+    await ctx.db.patch(questionId, cleanUpdates);
+  },
+});
+
+export const updateQuestionBackend = mutation({
+  args: {
+    questionId: v.id("assessmentQuestions"),
+    questionText: v.string(),
+    options: v.optional(v.union(v.array(v.string()), v.null())),
+    correctAnswer: v.any(),
+    acceptedAnswers: v.optional(v.union(v.array(v.string()), v.null())),
+    referenceAnswer: v.optional(v.union(v.string(), v.null())),
+    requiredKeyPoints: v.optional(v.union(v.array(v.string()), v.null())),
+    optionalKeyPoints: v.optional(v.union(v.array(v.string()), v.null())),
+    misconceptionIndicators: v.optional(v.union(v.array(v.string()), v.null())),
+    rubric: v.optional(v.union(v.array(v.object({
+      points: v.number(),
+      criterion: v.string(),
+    })), v.null())),
+    explanation: v.string(),
+    difficulty: v.string(),
+    conceptIds: v.optional(v.array(v.id("courseConcepts"))),
+    conceptNames: v.optional(v.union(v.array(v.string()), v.null())),
+    sourceEvidence: v.optional(v.array(v.object({
+      sourceId: v.string(),
+      sourceName: v.string(),
+      evidenceType: v.string(),
+      locationType: v.optional(v.union(v.string(), v.null())),
+      sourceChunkId: v.optional(v.union(v.string(), v.null())),
+      sourceVisualId: v.optional(v.union(v.string(), v.null())),
+      pageNumber: v.optional(v.union(v.number(), v.null())),
+      slideNumber: v.optional(v.union(v.number(), v.null())),
+      startTime: v.optional(v.union(v.number(), v.null())),
+      endTime: v.optional(v.union(v.number(), v.null())),
+      visualType: v.optional(v.union(v.string(), v.null())),
+      imageUrl: v.optional(v.union(v.string(), v.null())),
+      excerpt: v.string(),
+    }))),
+    sourceVisualId: v.optional(v.union(v.id("sourceVisuals"), v.string(), v.null())),
+    sourceVisualUrl: v.optional(v.union(v.string(), v.null())),
+    points: v.optional(v.number()),
+    qualityScore: v.optional(v.union(v.number(), v.null())),
+  },
+  handler: async (ctx, args) => {
+    const question = await ctx.db.get(args.questionId);
+    if (!question) throw new Error("Question not found");
+
+    const { questionId, ...updates } = args;
+    const cleanUpdates = {};
+    for (const [k, v] of Object.entries(updates)) {
+      if (v !== null && v !== undefined) {
+        cleanUpdates[k] = v;
+      }
+    }
+    await ctx.db.patch(questionId, cleanUpdates);
+    return { success: true };
   },
 });
 
 export const startAttempt = mutation({
   args: {
     assessmentId: v.id("assessments"),
-    mode: v.optional(v.string()), // "practice" | "mock_exam"
+    courseId: v.optional(v.union(v.id("courses"), v.string(), v.null())),
+    mode: v.optional(v.union(v.string(), v.null())), // "practice" | "mock_exam"
   },
   handler: async (ctx, args) => {
     const user = await requireUser(ctx);
@@ -691,6 +772,8 @@ export const saveResponse = mutation({
     attemptId: v.id("assessmentAttempts"),
     questionId: v.id("assessmentQuestions"),
     userAnswer: v.any(),
+    courseId: v.optional(v.union(v.id("courses"), v.string(), v.null())),
+    assessmentId: v.optional(v.union(v.id("assessments"), v.string(), v.null())),
   },
   handler: async (ctx, args) => {
     const user = await requireUser(ctx);
@@ -736,6 +819,8 @@ export const saveResponse = mutation({
 export const submitAttempt = mutation({
   args: {
     attemptId: v.id("assessmentAttempts"),
+    courseId: v.optional(v.union(v.id("courses"), v.string(), v.null())),
+    assessmentId: v.optional(v.union(v.id("assessments"), v.string(), v.null())),
   },
   handler: async (ctx, args) => {
     const user = await requireUser(ctx);
@@ -1009,7 +1094,10 @@ export const gradeAttemptBackend = mutation({
 });
 
 export const deleteAssessment = mutation({
-  args: { assessmentId: v.id("assessments") },
+  args: {
+    assessmentId: v.id("assessments"),
+    courseId: v.optional(v.union(v.id("courses"), v.string(), v.null())),
+  },
   handler: async (ctx, args) => {
     const user = await requireUser(ctx);
     const assessment = await ctx.db.get(args.assessmentId);
@@ -1018,8 +1106,7 @@ export const deleteAssessment = mutation({
     // Cascade delete responses, attempts, questions
     const responses = await ctx.db
       .query("assessmentResponses")
-      .withIndex("by_course", (q) => q.eq("courseId", assessment.courseId))
-      .filter((q) => q.eq(q.field("assessmentId"), args.assessmentId))
+      .withIndex("by_assessment", (q) => q.eq("assessmentId", args.assessmentId))
       .collect();
     for (const r of responses) {
       await ctx.db.delete(r._id);

@@ -228,6 +228,34 @@ http.route({
     }
 
     const body = await request.json();
+
+    if (body.error === null) body.error = undefined;
+    if (body.generationVersion === null) body.generationVersion = undefined;
+
+    if (Array.isArray(body.questions)) {
+      body.questions = body.questions.map((q) => {
+        const cleanQ = {};
+        for (const [k, v] of Object.entries(q)) {
+          if (v !== null && v !== undefined) {
+            if (k === "sourceEvidence" && Array.isArray(v)) {
+              cleanQ[k] = v.map((ev) => {
+                const cleanEv = {};
+                for (const [ek, evVal] of Object.entries(ev)) {
+                  if (evVal !== null && evVal !== undefined) {
+                    cleanEv[ek] = evVal;
+                  }
+                }
+                return cleanEv;
+              });
+            } else {
+              cleanQ[k] = v;
+            }
+          }
+        }
+        return cleanQ;
+      });
+    }
+
     const result = await ctx.runMutation(api.assessments.saveGeneratedAssessmentBackend, body);
 
     return new Response(JSON.stringify(result), {

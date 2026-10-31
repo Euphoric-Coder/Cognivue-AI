@@ -216,11 +216,27 @@ class AssessmentService:
 
             # 5. Persist to Convex (HTTP save or mutation)
             final_status = "ready"
+
+            clean_questions = []
+            for q in accepted_questions:
+                clean_q = {}
+                for k, v in q.items():
+                    if v is not None:
+                        if k == "sourceEvidence" and isinstance(v, list):
+                            clean_ev_list = []
+                            for ev in v:
+                                clean_ev = {ek: ev[ek] for ek in ev if ev[ek] is not None}
+                                clean_ev_list.append(clean_ev)
+                            clean_q[k] = clean_ev_list
+                        else:
+                            clean_q[k] = v
+                clean_questions.append(clean_q)
+
             persist_payload = {
                 "assessmentId": assessment_id,
                 "status": final_status,
                 "generationVersion": 1,
-                "questions": accepted_questions,
+                "questions": clean_questions,
             }
 
             save_url = f"{settings.convex_site_url}/assessment/save"
@@ -327,18 +343,29 @@ class AssessmentService:
                 if is_valid:
                     cand["qualityScore"] = quality_score
                     # Patch question in Convex
-                    self.convex_client.mutation("assessments:updateQuestion", {
+                    patch_args = {
                         "questionId": question_id,
                         "questionText": cand["questionText"],
-                        "options": cand.get("options"),
                         "correctAnswer": cand["correctAnswer"],
-                        "referenceAnswer": cand.get("referenceAnswer"),
-                        "requiredKeyPoints": cand.get("requiredKeyPoints"),
                         "explanation": cand["explanation"],
                         "difficulty": cand["difficulty"],
                         "points": cand["points"],
                         "qualityScore": quality_score,
-                    })
+                    }
+                    if cand.get("options") is not None:
+                        patch_args["options"] = cand["options"]
+                    if cand.get("referenceAnswer") is not None:
+                        patch_args["referenceAnswer"] = cand["referenceAnswer"]
+                    if cand.get("requiredKeyPoints") is not None:
+                        patch_args["requiredKeyPoints"] = cand["requiredKeyPoints"]
+                    if cand.get("optionalKeyPoints") is not None:
+                        patch_args["optionalKeyPoints"] = cand["optionalKeyPoints"]
+                    if cand.get("misconceptionIndicators") is not None:
+                        patch_args["misconceptionIndicators"] = cand["misconceptionIndicators"]
+                    if cand.get("rubric") is not None:
+                        patch_args["rubric"] = cand["rubric"]
+
+                    self.convex_client.mutation("assessments:updateQuestionBackend", patch_args)
                     return {"success": True, "question": cand}
 
         return {"success": False, "error": "Could not generate a unique grounded replacement question."}

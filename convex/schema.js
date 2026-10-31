@@ -313,45 +313,51 @@ export default defineSchema({
     courseId: v.id("courses"),
 
     title: v.string(),
-    description: v.optional(v.string()),
+    description: v.optional(v.union(v.string(), v.null())),
 
     assessmentType: v.string(), // "practice" | "topic_quiz" | "mixed_quiz" | "mock_exam"
 
     status: v.string(), // "generating" | "draft" | "ready" | "failed" | "archived"
-    error: v.optional(v.string()),
+    error: v.optional(v.union(v.string(), v.null())),
 
-    selectedConceptIds: v.array(v.id("courseConcepts")),
-    selectedConceptNames: v.optional(v.array(v.string())),
+    selectedConceptIds: v.optional(v.union(v.array(v.id("courseConcepts")), v.null())),
+    selectedConceptNames: v.optional(v.union(v.array(v.string()), v.null())),
 
     difficulty: v.string(), // "easy" | "medium" | "hard" | "mixed"
 
     questionCount: v.number(),
 
-    questionTypeConfig: v.object({
-      mcq: v.boolean(),
-      multiple_select: v.boolean(),
-      true_false: v.boolean(),
-      short_answer: v.boolean(),
-      numerical: v.boolean(),
-      concept_explanation: v.boolean(),
-    }),
+    questionTypeConfig: v.optional(
+      v.union(
+        v.array(v.string()),
+        v.object({
+          mcq: v.boolean(),
+          multiple_select: v.boolean(),
+          true_false: v.boolean(),
+          short_answer: v.boolean(),
+          numerical: v.boolean(),
+          concept_explanation: v.boolean(),
+        }),
+        v.null()
+      )
+    ),
 
-    timeLimitMinutes: v.optional(v.number()),
+    timeLimitMinutes: v.optional(v.union(v.number(), v.null())),
 
-    shuffleQuestions: v.optional(v.boolean()),
-    shuffleOptions: v.optional(v.boolean()),
+    shuffleQuestions: v.optional(v.union(v.boolean(), v.null())),
+    shuffleOptions: v.optional(v.union(v.boolean(), v.null())),
 
-    generationVersion: v.optional(v.number()),
-    courseSnapshotHash: v.optional(v.string()),
-    graphVersion: v.optional(v.number()),
+    generationVersion: v.optional(v.union(v.number(), v.null())),
+    courseSnapshotHash: v.optional(v.union(v.string(), v.null())),
+    graphVersion: v.optional(v.union(v.number(), v.null())),
 
-    generatedQuestionCount: v.optional(v.number()),
-    totalPoints: v.optional(v.number()),
-    estimatedDurationMinutes: v.optional(v.number()),
+    generatedQuestionCount: v.optional(v.union(v.number(), v.null())),
+    totalPoints: v.optional(v.union(v.number(), v.null())),
+    estimatedDurationMinutes: v.optional(v.union(v.number(), v.null())),
 
     createdAt: v.number(),
     updatedAt: v.number(),
-    generatedAt: v.optional(v.number()),
+    generatedAt: v.optional(v.union(v.number(), v.null())),
   })
     .index("by_course", ["courseId"])
     .index("by_user", ["userId"])
@@ -369,50 +375,50 @@ export default defineSchema({
 
     questionText: v.string(),
 
-    options: v.optional(v.array(v.string())),
+    options: v.optional(v.union(v.array(v.string()), v.null())),
 
     correctAnswer: v.any(),
-    acceptedAnswers: v.optional(v.array(v.string())),
+    acceptedAnswers: v.optional(v.union(v.array(v.string()), v.null())),
 
-    referenceAnswer: v.optional(v.string()),
-    requiredKeyPoints: v.optional(v.array(v.string())),
-    optionalKeyPoints: v.optional(v.array(v.string())),
-    misconceptionIndicators: v.optional(v.array(v.string())),
-    rubric: v.optional(v.array(v.object({
+    referenceAnswer: v.optional(v.union(v.string(), v.null())),
+    requiredKeyPoints: v.optional(v.union(v.array(v.string()), v.null())),
+    optionalKeyPoints: v.optional(v.union(v.array(v.string()), v.null())),
+    misconceptionIndicators: v.optional(v.union(v.array(v.string()), v.null())),
+    rubric: v.optional(v.union(v.array(v.object({
       points: v.number(),
       criterion: v.string(),
-    }))),
+    })), v.null())),
 
     explanation: v.string(),
 
     difficulty: v.string(), // "easy" | "medium" | "hard"
 
     conceptIds: v.array(v.id("courseConcepts")),
-    conceptNames: v.optional(v.array(v.string())),
+    conceptNames: v.optional(v.union(v.array(v.string()), v.null())),
 
     sourceEvidence: v.array(v.object({
       sourceId: v.string(),
       sourceName: v.string(),
       evidenceType: v.string(),
-      locationType: v.optional(v.string()),
-      sourceChunkId: v.optional(v.string()),
-      sourceVisualId: v.optional(v.string()),
-      pageNumber: v.optional(v.number()),
-      slideNumber: v.optional(v.number()),
-      startTime: v.optional(v.number()),
-      endTime: v.optional(v.number()),
-      visualType: v.optional(v.string()),
-      imageUrl: v.optional(v.string()),
+      locationType: v.optional(v.union(v.string(), v.null())),
+      sourceChunkId: v.optional(v.union(v.string(), v.null())),
+      sourceVisualId: v.optional(v.union(v.string(), v.null())),
+      pageNumber: v.optional(v.union(v.number(), v.null())),
+      slideNumber: v.optional(v.union(v.number(), v.null())),
+      startTime: v.optional(v.union(v.number(), v.null())),
+      endTime: v.optional(v.union(v.number(), v.null())),
+      visualType: v.optional(v.union(v.string(), v.null())),
+      imageUrl: v.optional(v.union(v.string(), v.null())),
       excerpt: v.string(),
     })),
 
-    sourceVisualId: v.optional(v.id("sourceVisuals")),
-    sourceVisualUrl: v.optional(v.string()),
+    sourceVisualId: v.optional(v.union(v.id("sourceVisuals"), v.string(), v.null())),
+    sourceVisualUrl: v.optional(v.union(v.string(), v.null())),
 
     points: v.number(),
 
-    qualityScore: v.optional(v.number()),
-    generationVersion: v.optional(v.number()),
+    qualityScore: v.optional(v.union(v.number(), v.null())),
+    generationVersion: v.optional(v.union(v.number(), v.null())),
 
     createdAt: v.number(),
   })
@@ -426,29 +432,29 @@ export default defineSchema({
     assessmentId: v.id("assessments"),
 
     status: v.string(), // "in_progress" | "submitted" | "graded"
-    mode: v.optional(v.string()), // "practice" | "mock_exam"
+    mode: v.optional(v.union(v.string(), v.null())), // "practice" | "mock_exam"
 
     startedAt: v.number(),
-    submittedAt: v.optional(v.number()),
+    submittedAt: v.optional(v.union(v.number(), v.null())),
 
-    timeLimitMinutes: v.optional(v.number()),
+    timeLimitMinutes: v.optional(v.union(v.number(), v.null())),
 
-    score: v.optional(v.number()),
-    maxScore: v.optional(v.number()),
-    percentage: v.optional(v.number()),
+    score: v.optional(v.union(v.number(), v.null())),
+    maxScore: v.optional(v.union(v.number(), v.null())),
+    percentage: v.optional(v.union(v.number(), v.null())),
 
-    correctCount: v.optional(v.number()),
-    incorrectCount: v.optional(v.number()),
-    unansweredCount: v.optional(v.number()),
+    correctCount: v.optional(v.union(v.number(), v.null())),
+    incorrectCount: v.optional(v.union(v.number(), v.null())),
+    unansweredCount: v.optional(v.union(v.number(), v.null())),
 
-    timeSpentSeconds: v.optional(v.number()),
+    timeSpentSeconds: v.optional(v.union(v.number(), v.null())),
 
-    conceptPerformance: v.optional(v.array(v.object({
+    conceptPerformance: v.optional(v.union(v.array(v.object({
       conceptId: v.string(),
       conceptName: v.string(),
       correct: v.number(),
       total: v.number(),
-    }))),
+    })), v.null())),
 
     createdAt: v.number(),
   })
@@ -468,23 +474,25 @@ export default defineSchema({
     userAnswer: v.any(),
 
     isAnswered: v.boolean(),
-    isCorrect: v.optional(v.boolean()),
+    isCorrect: v.optional(v.union(v.boolean(), v.null())),
 
-    awardedPoints: v.optional(v.number()),
+    awardedPoints: v.optional(v.union(v.number(), v.null())),
     maxPoints: v.number(),
 
-    feedback: v.optional(v.string()),
+    feedback: v.optional(v.union(v.string(), v.null())),
 
-    matchedKeyPoints: v.optional(v.array(v.string())),
-    missingKeyPoints: v.optional(v.array(v.string())),
-    incorrectClaims: v.optional(v.array(v.string())),
+    matchedKeyPoints: v.optional(v.union(v.array(v.string()), v.null())),
+    missingKeyPoints: v.optional(v.union(v.array(v.string()), v.null())),
+    incorrectClaims: v.optional(v.union(v.array(v.string()), v.null())),
 
-    gradedAt: v.optional(v.number()),
+    gradedAt: v.optional(v.union(v.number(), v.null())),
     createdAt: v.number(),
     updatedAt: v.number(),
   })
     .index("by_attempt", ["attemptId"])
     .index("by_question", ["questionId"])
     .index("by_attempt_question", ["attemptId", "questionId"])
+    .index("by_assessment", ["assessmentId"])
+    .index("by_course", ["courseId"])
     .index("by_user", ["userId"]),
 });
