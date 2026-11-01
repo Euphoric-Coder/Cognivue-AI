@@ -192,6 +192,31 @@ export const deleteCourse = mutation({
     for (const ass of existingAssessments) {
       await ctx.db.delete(ass._id);
     }
+
+    // Cascade delete V8 Learner Model tables
+    const existingObservations = await ctx.db
+      .query("learnerObservations")
+      .withIndex("by_user_course", (q) => q.eq("userId", user._id).eq("courseId", args.courseId))
+      .collect();
+    for (const obs of existingObservations) {
+      await ctx.db.delete(obs._id);
+    }
+
+    const existingStates = await ctx.db
+      .query("learnerConceptStates")
+      .withIndex("by_user_course", (q) => q.eq("userId", user._id).eq("courseId", args.courseId))
+      .collect();
+    for (const state of existingStates) {
+      await ctx.db.delete(state._id);
+    }
+
+    const existingSnapshots = await ctx.db
+      .query("learnerMasterySnapshots")
+      .withIndex("by_user_course", (q) => q.eq("userId", user._id).eq("courseId", args.courseId))
+      .collect();
+    for (const snap of existingSnapshots) {
+      await ctx.db.delete(snap._id);
+    }
     
     // Delete the course
     await ctx.db.delete(args.courseId);

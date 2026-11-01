@@ -1,5 +1,6 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
+import { processAttemptGradedHelper } from "./learnerModel";
 
 async function getCurrentUser(ctx) {
   const identity = await ctx.auth.getUserIdentity();
@@ -965,6 +966,17 @@ export const submitAttempt = mutation({
       conceptPerformance,
     });
 
+    if (finalStatus === "graded") {
+      try {
+        await processAttemptGradedHelper(ctx, {
+          attemptId: args.attemptId,
+          reason: "assessment_graded",
+        });
+      } catch (err) {
+        console.error("Failed to update learner model on submitAttempt:", err);
+      }
+    }
+
     return {
       attemptId: args.attemptId,
       status: finalStatus,
@@ -1088,6 +1100,15 @@ export const gradeAttemptBackend = mutation({
       unansweredCount,
       conceptPerformance,
     });
+
+    try {
+      await processAttemptGradedHelper(ctx, {
+        attemptId: args.attemptId,
+        reason: "assessment_graded",
+      });
+    } catch (err) {
+      console.error("Failed to update learner model on gradeAttemptBackend:", err);
+    }
 
     return { success: true, score: totalScore, percentage };
   },

@@ -34,6 +34,7 @@ export default function AssessmentResultsPage({ params }) {
 
   const data = useQuery(api.assessments.getAttemptResponses, { attemptId });
   const startAttempt = useMutation(api.assessments.startAttempt);
+  const learnerDeltas = useQuery(api.learnerModel.getAttemptLearnerDeltas, { attemptId });
 
   const [isRetaking, setIsRetaking] = useState(false);
 
@@ -235,6 +236,69 @@ export default function AssessmentResultsPage({ params }) {
           </div>
         </CardContent>
       </Card>
+
+      {/* Learner Model Updated Section (Requirement 50 & 51) */}
+      {learnerDeltas && learnerDeltas.length > 0 && (
+        <Card className="border-primary/30 shadow-xs bg-card">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-primary shrink-0" />
+                <CardTitle className="text-base font-semibold">Learner Model Updated</CardTitle>
+              </div>
+              <Link href={`/dashboard/courses/${courseId}/progress`}>
+                <span className="text-xs text-primary hover:underline font-semibold inline-flex items-center gap-1">
+                  View Full Progress <ExternalLink className="w-3 h-3" />
+                </span>
+              </Link>
+            </div>
+            <CardDescription>
+              Changes in your persistent concept mastery derived from this assessment attempt.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {learnerDeltas.map((d) => {
+                const deltaNum = d.delta ?? (d.after - d.before);
+                const isPositive = deltaNum > 0;
+                const isNegative = deltaNum < 0;
+
+                return (
+                  <div key={d.conceptId} className="p-3.5 rounded-xl border bg-muted/20 flex items-center justify-between gap-3 text-xs">
+                    <div className="min-w-0 flex-1">
+                      <div className="font-semibold text-foreground truncate">{d.conceptName}</div>
+                      <div className="flex items-center gap-1.5 text-muted-foreground mt-0.5">
+                        <Badge variant="outline" className="text-[9px] uppercase tracking-wider py-0 px-1 capitalize">
+                          {d.masteryBand.replace(/_/g, " ")}
+                        </Badge>
+                        <span>•</span>
+                        <span>{d.confidence} conf.</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className="font-mono text-xs text-muted-foreground">{d.before}% →</span>
+                      <span className="font-mono text-sm font-bold text-foreground">{d.after}%</span>
+                      <Badge
+                        variant="outline"
+                        className={`font-mono font-bold text-[10px] ${
+                          isPositive
+                            ? "text-emerald-600 dark:text-emerald-400 border-emerald-500/40 bg-emerald-500/10"
+                            : isNegative
+                            ? "text-rose-600 dark:text-rose-400 border-rose-500/40 bg-rose-500/10"
+                            : "text-muted-foreground"
+                        }`}
+                      >
+                        {isPositive ? `+${deltaNum}%` : `${deltaNum}%`}
+                      </Badge>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Question by Question Review (Requirement 55) */}
       <div className="space-y-4">

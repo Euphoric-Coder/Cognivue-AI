@@ -495,4 +495,134 @@ export default defineSchema({
     .index("by_assessment", ["assessmentId"])
     .index("by_course", ["courseId"])
     .index("by_user", ["userId"]),
+
+  // V8 Learner Model & Knowledge Tracing Tables
+  learnerObservations: defineTable({
+    userId: v.id("users"),
+    courseId: v.id("courses"),
+    conceptId: v.id("courseConcepts"),
+    conceptKey: v.string(), // Durable semantic identity: courseId + normalizedName
+    conceptName: v.string(),
+
+    assessmentId: v.id("assessments"),
+    attemptId: v.id("assessmentAttempts"),
+    questionId: v.id("assessmentQuestions"),
+    responseId: v.id("assessmentResponses"),
+
+    questionType: v.string(), // "mcq" | "multiple_select" | "true_false" | "short_answer" | "numerical" | "concept_explanation"
+    difficulty: v.string(), // "easy" | "medium" | "hard"
+
+    scoreFraction: v.number(), // 0.0 to 1.0 (preserves partial credit)
+    correctness: v.string(), // "correct" | "partial" | "incorrect" | "unanswered"
+
+    weight: v.number(), // Difficulty * Type * Multi-concept contribution
+    timestamp: v.number(),
+
+    modelVersion: v.string(), // e.g. "mastery-v1"
+    createdAt: v.number(),
+  })
+    .index("by_user_course", ["userId", "courseId"])
+    .index("by_user_concept", ["userId", "conceptId"])
+    .index("by_user_concept_key", ["userId", "courseId", "conceptKey"])
+    .index("by_attempt", ["attemptId"])
+    .index("by_response_concept", ["responseId", "conceptId"]),
+
+  learnerConceptStates: defineTable({
+    userId: v.id("users"),
+    courseId: v.id("courses"),
+    conceptId: v.id("courseConcepts"),
+    conceptKey: v.string(),
+    conceptName: v.string(),
+    importance: v.string(), // "core" | "supporting" | "minor"
+    conceptType: v.optional(v.union(v.string(), v.null())),
+
+    masteryProbability: v.number(), // 0.00 to 1.00
+    masteryBand: v.string(), // "insufficient_evidence" | "needs_attention" | "developing" | "proficient" | "strong"
+
+    confidence: v.string(), // "insufficient" | "low" | "medium" | "high"
+    confidenceScore: v.number(), // 0.00 to 1.00
+
+    evidenceCount: v.number(),
+
+    totalAttempts: v.number(),
+    correctAttempts: v.number(),
+    partialAttempts: v.number(),
+    incorrectAttempts: v.number(),
+    unansweredAttempts: v.optional(v.union(v.number(), v.null())),
+
+    weightedScore: v.number(),
+    recentScore: v.number(),
+
+    difficultyExposure: v.object({
+      easy: v.number(),
+      medium: v.number(),
+      hard: v.number(),
+    }),
+
+    lastObservedAt: v.optional(v.union(v.number(), v.null())),
+    firstObservedAt: v.optional(v.union(v.number(), v.null())),
+
+    trend: v.string(), // "improving" | "stable" | "declining" | "insufficient_data"
+    trendDelta: v.optional(v.union(v.number(), v.null())),
+
+    readiness: v.optional(v.union(v.string(), v.null())), // "ready" | "needs_attention" | "developing" | "not_applicable"
+    prerequisiteCount: v.optional(v.union(v.number(), v.null())),
+    prerequisitesSummary: v.optional(
+      v.union(
+        v.array(
+          v.object({
+            conceptId: v.string(),
+            conceptName: v.string(),
+            mastery: v.number(),
+            masteryBand: v.string(),
+          })
+        ),
+        v.null()
+      )
+    ),
+
+    isArchived: v.optional(v.union(v.boolean(), v.null())),
+    modelVersion: v.string(),
+    updatedAt: v.number(),
+  })
+    .index("by_user_course", ["userId", "courseId"])
+    .index("by_user_concept", ["userId", "conceptId"])
+    .index("by_user_concept_key", ["userId", "courseId", "conceptKey"])
+    .index("by_course", ["courseId"])
+    .index("by_user_course_band", ["userId", "courseId", "masteryBand"]),
+
+  learnerMasterySnapshots: defineTable({
+    userId: v.id("users"),
+    courseId: v.id("courses"),
+
+    attemptId: v.optional(v.union(v.id("assessmentAttempts"), v.null())),
+    assessmentTitle: v.optional(v.union(v.string(), v.null())),
+
+    overallMastery: v.number(),
+    coverage: v.number(),
+    observedConceptCount: v.number(),
+    totalConceptCount: v.number(),
+
+    reason: v.string(), // "assessment_graded" | "backfill" | "recompute"
+
+    conceptDeltas: v.optional(
+      v.union(
+        v.array(
+          v.object({
+            conceptId: v.string(),
+            conceptName: v.string(),
+            before: v.number(),
+            after: v.number(),
+            delta: v.number(),
+          })
+        ),
+        v.null()
+      )
+    ),
+
+    timestamp: v.number(),
+  })
+    .index("by_user_course", ["userId", "courseId"])
+    .index("by_user_course_time", ["userId", "courseId", "timestamp"])
+    .index("by_attempt", ["attemptId"]),
 });

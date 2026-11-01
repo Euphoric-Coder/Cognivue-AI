@@ -15,7 +15,8 @@ import {
   ExternalLink,
   Layers,
   Sparkles,
-  BookOpen
+  BookOpen,
+  Target
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -26,6 +27,11 @@ export function ConceptDetailsSheet({ concept, courseId, onClose, onSelectConcep
 
   const details = useQuery(
     api.knowledgeGraph.getConceptDetails,
+    concept ? { courseId, conceptId: concept._id } : "skip"
+  );
+
+  const learnerState = useQuery(
+    api.learnerModel.getConceptLearnerDetails,
     concept ? { courseId, conceptId: concept._id } : "skip"
   );
 
@@ -98,6 +104,48 @@ export function ConceptDetailsSheet({ concept, courseId, onClose, onSelectConcep
             <div className="p-4 rounded-xl bg-card border text-sm leading-relaxed text-foreground shadow-xs">
               {concept.description}
             </div>
+          </div>
+
+          {/* V8 Concept Mastery */}
+          <div className="p-4 rounded-xl bg-card border shadow-xs space-y-3">
+            <div className="flex items-center justify-between">
+              <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                <Target className="w-3.5 h-3.5 text-primary" />
+                Learner Mastery
+              </h4>
+              <Link href={`/dashboard/courses/${courseId}/progress`}>
+                <span className="text-xs text-primary hover:underline font-semibold inline-flex items-center gap-1">
+                  View Progress <ArrowRight className="w-3 h-3" />
+                </span>
+              </Link>
+            </div>
+
+            {learnerState === undefined ? (
+              <Skeleton className="h-14 w-full rounded-lg" />
+            ) : learnerState && learnerState.hasEvidence ? (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-2xl font-black text-primary">
+                      {Math.round(learnerState.masteryProbability * 100)}%
+                    </span>
+                    <Badge variant="outline" className="text-[10px] uppercase font-bold tracking-wider">
+                      {learnerState.masteryBand.replace(/_/g, " ")}
+                    </Badge>
+                  </div>
+                  <Badge variant="outline" className="text-[10px] text-muted-foreground capitalize">
+                    {learnerState.confidence} confidence
+                  </Badge>
+                </div>
+                <div className="text-[11px] text-muted-foreground">
+                  Backed by <strong>{learnerState.evidenceCount}</strong> graded response{learnerState.evidenceCount === 1 ? "" : "s"}.
+                </div>
+              </div>
+            ) : (
+              <div className="text-xs text-muted-foreground py-1">
+                No assessment evidence recorded for this concept yet.
+              </div>
+            )}
           </div>
 
           {/* Relationships */}

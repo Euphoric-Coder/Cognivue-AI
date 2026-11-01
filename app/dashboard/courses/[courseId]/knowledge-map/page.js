@@ -16,7 +16,8 @@ import {
   BookOpen,
   ArrowRight,
   Loader2,
-  CheckCircle2
+  CheckCircle2,
+  Target
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,14 +34,25 @@ export default function KnowledgeMapPage({ params }) {
 
   const graphData = useQuery(api.knowledgeGraph.getCourseKnowledgeGraph, { courseId });
   const sources = useQuery(api.sources.getCourseSources, { courseId });
+  const conceptStates = useQuery(api.learnerModel.getCourseConceptStates, { courseId });
 
   const [viewMode, setViewMode] = useState("graph"); // "graph" | "list"
+  const [displayMode, setDisplayMode] = useState("structure"); // "structure" | "mastery"
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTypeFilter, setSelectedTypeFilter] = useState("all");
   const [isBuilding, setIsBuilding] = useState(false);
 
   const [selectedConcept, setSelectedConcept] = useState(null);
   const [selectedEdge, setSelectedEdge] = useState(null);
+
+  const learnerStatesMap = useMemo(() => {
+    if (!conceptStates) return new Map();
+    const map = new Map();
+    for (const s of conceptStates) {
+      map.set(s.conceptId, s);
+    }
+    return map;
+  }, [conceptStates]);
 
   // Filtered concepts based on search and type filter
   const allConcepts = graphData?.concepts || [];
@@ -306,6 +318,31 @@ export default function KnowledgeMapPage({ params }) {
             <span><strong>{graphData.relationshipCount}</strong> links</span>
           </div>
 
+          {/* Display Mode Toggle: Structure vs Mastery (V8) */}
+          <div className="flex items-center bg-muted/60 p-0.5 rounded-xl border">
+            <Button
+              variant={displayMode === "structure" ? "secondary" : "ghost"}
+              size="sm"
+              className={`h-7 text-xs px-2.5 rounded-lg font-medium ${
+                displayMode === "structure" ? "font-bold text-primary" : "text-muted-foreground"
+              }`}
+              onClick={() => setDisplayMode("structure")}
+            >
+              Structure
+            </Button>
+            <Button
+              variant={displayMode === "mastery" ? "secondary" : "ghost"}
+              size="sm"
+              className={`h-7 text-xs px-2.5 rounded-lg font-medium ${
+                displayMode === "mastery" ? "font-bold text-emerald-600 dark:text-emerald-400" : "text-muted-foreground"
+              }`}
+              onClick={() => setDisplayMode("mastery")}
+            >
+              <Target className="w-3.5 h-3.5 mr-1" />
+              Mastery
+            </Button>
+          </div>
+
           {/* View Mode Toggle */}
           <div className="flex items-center bg-muted/60 p-0.5 rounded-xl border">
             <Button
@@ -352,6 +389,8 @@ export default function KnowledgeMapPage({ params }) {
             onSelectConcept={(c) => setSelectedConcept(c)}
             onSelectEdge={(e) => setSelectedEdge(e)}
             selectedConceptId={selectedConcept?._id}
+            displayMode={displayMode}
+            learnerStatesMap={learnerStatesMap}
           />
         ) : (
           <div className="h-full overflow-y-auto pr-1">

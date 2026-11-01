@@ -18,7 +18,9 @@ export function InteractiveGraph({
   relationships,
   onSelectConcept,
   onSelectEdge,
-  selectedConceptId
+  selectedConceptId,
+  displayMode = "structure",
+  learnerStatesMap = new Map(),
 }) {
   const containerRef = useRef(null);
   const [dimensions, setDimensions] = useState({ width: 900, height: 600 });
@@ -372,8 +374,47 @@ export function InteractiveGraph({
             const isConnected = connectedMap ? connectedMap.has(concept._id) : true;
             const isCore = concept.importance === "core";
 
-            const width = Math.max(140, Math.min(concept.name.length * 8.5 + 40, 220));
-            const height = 52;
+            // Learner state integration (V8 Knowledge Map Mastery Mode)
+            const lState = learnerStatesMap?.get(concept._id);
+            const hasEvidence = lState && lState.evidenceCount > 0 && lState.masteryBand !== "insufficient_evidence";
+            const masteryPct = hasEvidence ? Math.round(lState.masteryProbability * 100) : null;
+            const band = lState ? lState.masteryBand : "not_assessed";
+
+            let nodeStrokeClass = "";
+            let topBadgeText = concept.type;
+            let indicatorFill = null;
+
+            if (displayMode === "mastery") {
+              if (band === "strong") {
+                nodeStrokeClass = "stroke-emerald-500 stroke-[2.2] dark:stroke-emerald-400";
+                topBadgeText = `${masteryPct}% · Strong`;
+                indicatorFill = "fill-emerald-500";
+              } else if (band === "proficient") {
+                nodeStrokeClass = "stroke-blue-500 stroke-[2] dark:stroke-blue-400";
+                topBadgeText = `${masteryPct}% · Proficient`;
+                indicatorFill = "fill-blue-500";
+              } else if (band === "developing") {
+                nodeStrokeClass = "stroke-amber-500 stroke-[2] dark:stroke-amber-400";
+                topBadgeText = `${masteryPct}% · Developing`;
+                indicatorFill = "fill-amber-500";
+              } else if (band === "needs_attention") {
+                nodeStrokeClass = "stroke-rose-500 stroke-[2.2] dark:stroke-rose-400";
+                topBadgeText = `${masteryPct}% · Needs Attention`;
+                indicatorFill = "fill-rose-500";
+              } else {
+                nodeStrokeClass = "stroke-muted-foreground/40 stroke-dashed stroke-[1.2]";
+                topBadgeText = "— · Not Assessed";
+                indicatorFill = "fill-muted-foreground/40";
+              }
+            } else {
+              nodeStrokeClass = isCore
+                ? "stroke-primary/70 stroke-[1.8] shadow-sm"
+                : "stroke-border stroke-[1.2] shadow-2xs";
+              indicatorFill = isCore ? "fill-primary animate-pulse" : null;
+            }
+
+            const width = Math.max(160, Math.min(concept.name.length * 8.5 + 50, 240));
+            const height = 54;
 
             return (
               <g
@@ -398,38 +439,36 @@ export function InteractiveGraph({
                   width={width}
                   height={height}
                   rx="14"
-                  className={`transition-all duration-150 ${
+                  className={`transition-all duration-150 fill-card ${
                     isSelected
-                      ? "fill-card stroke-primary stroke-[2.5] shadow-lg"
-                      : isCore
-                      ? "fill-card hover:fill-card/90 stroke-primary/70 stroke-[1.8] shadow-sm"
-                      : "fill-card hover:fill-card/90 stroke-border stroke-[1.2] shadow-2xs"
+                      ? "stroke-primary stroke-[2.5] shadow-lg"
+                      : nodeStrokeClass
                   } hover:stroke-primary hover:shadow-md`}
                 />
 
-                {/* Core concept indicator pill */}
-                {isCore && (
+                {/* Indicator dot */}
+                {indicatorFill && (
                   <circle
                     cx={14}
-                    cy={15}
+                    cy={16}
                     r={3.5}
-                    className="fill-primary animate-pulse"
+                    className={indicatorFill}
                   />
                 )}
 
-                {/* Concept Type Badge text */}
+                {/* Concept Type / Mastery Badge text (Accessible: includes textual mastery label) */}
                 <text
-                  x={isCore ? 24 : 14}
-                  y={18}
-                  className="text-[9px] uppercase font-bold tracking-wider fill-muted-foreground pointer-events-none"
+                  x={indicatorFill ? 24 : 14}
+                  y={19}
+                  className="text-[9.5px] uppercase font-bold tracking-wider fill-muted-foreground pointer-events-none"
                 >
-                  {concept.type}
+                  {topBadgeText}
                 </text>
 
                 {/* Concept Name */}
                 <text
                   x={14}
-                  y={37}
+                  y={39}
                   className={`text-xs font-bold pointer-events-none truncate ${
                     isSelected || isHovered ? "fill-primary" : "fill-foreground"
                   }`}

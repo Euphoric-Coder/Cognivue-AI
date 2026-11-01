@@ -1,5 +1,6 @@
 import { mutation, query, internalMutation } from "./_generated/server";
 import { v } from "convex/values";
+import { migrateConceptsHelper } from "./learnerModel";
 
 async function getCurrentUser(ctx) {
   const identity = await ctx.auth.getUserIdentity();
@@ -317,12 +318,19 @@ export const saveKnowledgeGraphBackend = mutation({
       .query("courseConcepts")
       .withIndex("by_course", (q) => q.eq("courseId", args.courseId))
       .collect();
+
+    const oldConceptMap = new Map();
+    for (const c of existingConcepts) {
+      oldConceptMap.set(c._id, c.normalizedName || c.name.toLowerCase().trim());
+    }
+
     for (const c of existingConcepts) {
       await ctx.db.delete(c._id);
     }
 
     // 2. Insert new concepts and record tempId -> real _id mapping
     const tempToRealConceptId = new Map();
+    const newConceptsForMigration = [];
     let coreCount = 0;
 
     for (const c of args.concepts) {
@@ -343,6 +351,25 @@ export const saveKnowledgeGraphBackend = mutation({
         updatedAt: Date.now(),
       });
       tempToRealConceptId.set(c.tempId, insertedId);
+      newConceptsForMigration.push({
+        newId: insertedId,
+        normalizedName: c.normalizedName,
+        name: c.name,
+      });
+    }
+
+    // Preserve learner model states across graph rebuild if user is resolved
+    if (realUserId) {
+      try {
+        await migrateConceptsHelper(ctx, {
+          courseId: args.courseId,
+          userId: realUserId,
+          oldConceptMap: Object.fromEntries(oldConceptMap),
+          newConcepts: newConceptsForMigration,
+        });
+      } catch (err) {
+        console.error("Failed to migrate learner concepts on graph rebuild:", err);
+      }
     }
 
     // 3. Insert new evidence linked to real conceptId
