@@ -1,6 +1,7 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 import { requireUser } from "./courses";
+import { recordMisconceptionsFromAttemptHelper } from "./adaptiveTutor";
 
 const MODEL_VERSION = "mastery-v1";
 
@@ -565,6 +566,13 @@ export async function processAttemptGradedHelper(ctx, args) {
     conceptDeltas: deltas,
     timestamp,
   });
+
+  // V9: Extract and record misconceptions from this attempt
+  try {
+    await recordMisconceptionsFromAttemptHelper(ctx, args.attemptId);
+  } catch (err) {
+    console.warn("Failed to record misconceptions during processAttemptGraded:", err);
+  }
 
   return {
     success: true,

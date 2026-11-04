@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useMemo } from "react";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
@@ -16,6 +16,7 @@ import {
   HelpCircle,
   CheckCircle2,
   AlertCircle,
+  AlertTriangle,
   Clock,
   Layers,
   MessageSquare,
@@ -40,11 +41,26 @@ export function ConceptProgressDrawer({
     conceptId ? { courseId, conceptId } : "skip"
   );
 
+  const misconceptions = useQuery(
+    api.adaptiveTutor.getLearnerMisconceptions,
+    courseId ? { courseId, activeOnly: true } : "skip"
+  );
+
+  const conceptMisconceptions = useMemo(() => {
+    if (!misconceptions || !conceptId) return [];
+    return misconceptions.filter((m) => m.conceptId === conceptId);
+  }, [misconceptions, conceptId]);
+
   if (!conceptId) return null;
 
   const handleAskTutor = (conceptName) => {
-    const q = `Explain ${conceptName} and help me practice based on my current understanding.`;
-    router.push(`/dashboard/courses/${courseId}/tutor?initialQuestion=${encodeURIComponent(q)}`);
+    const isWeak = details?.masteryBand === "needs_attention" || details?.masteryBand === "developing";
+    const q = isWeak
+      ? `Review ${conceptName} with me step by step.`
+      : `Explain ${conceptName} and help me practice based on my current understanding.`;
+    router.push(
+      `/dashboard/courses/${courseId}/tutor?initialQuestion=${encodeURIComponent(q)}&focusConceptId=${conceptId}`
+    );
   };
 
   const getBandBadge = (band) => {
@@ -231,6 +247,26 @@ export function ConceptProgressDrawer({
                 </div>
               )}
 
+              {/* Common Issues / Misconceptions (V9 Requirement #71) */}
+              {conceptMisconceptions && conceptMisconceptions.length > 0 && (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0" />
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-foreground">Common Issue Detected</h4>
+                  </div>
+                  <div className="space-y-2">
+                    {conceptMisconceptions.map((m) => (
+                      <div key={m._id} className="p-3.5 rounded-xl border border-amber-500/25 bg-amber-500/5 space-y-1">
+                        <p className="text-xs font-medium text-foreground">{m.description}</p>
+                        <p className="text-[11px] text-muted-foreground">
+                          Observed in {m.evidenceCount} {m.evidenceCount === 1 ? "response" : "responses"} · Confidence: <span className="capitalize">{m.confidence}</span>
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* Observation History (Auditable Trail) */}
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
@@ -319,7 +355,9 @@ export function ConceptProgressDrawer({
             onClick={() => handleAskTutor(details?.conceptName || "this concept")}
           >
             <MessageSquare className="w-3.5 h-3.5 mr-1.5" />
-            Ask Tutor
+            {details?.masteryBand === "needs_attention" || details?.masteryBand === "developing"
+              ? "Review with Tutor"
+              : "Ask Tutor"}
           </Button>
         </div>
       </SheetContent>

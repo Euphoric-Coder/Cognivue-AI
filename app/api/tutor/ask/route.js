@@ -9,7 +9,16 @@ export async function POST(req) {
     }
 
     const body = await req.json();
-    const { courseId, sessionId, question } = body;
+    const {
+      courseId,
+      sessionId,
+      question,
+      tutorMode = "adaptive",
+      activeHintLevel,
+      focusConceptId,
+      reviewQuestionId,
+      reviewResponseId,
+    } = body;
 
     if (!courseId || !sessionId || !question) {
       return new NextResponse("Missing required fields", { status: 400 });
@@ -26,7 +35,12 @@ export async function POST(req) {
         courseId,
         sessionId,
         userId,
-        question
+        question,
+        tutorMode,
+        activeHintLevel,
+        focusConceptId,
+        reviewQuestionId,
+        reviewResponseId,
       }),
     });
 

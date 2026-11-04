@@ -40,8 +40,19 @@ export const getMessages = query({
   }
 });
 
+export const getSession = query({
+  args: { sessionId: v.id("tutorSessions") },
+  handler: async (ctx, args) => {
+    return await ctx.db.get(args.sessionId);
+  }
+});
+
 export const createSession = mutation({
-  args: { courseId: v.id("courses") },
+  args: { 
+    courseId: v.id("courses"),
+    tutorMode: v.optional(v.string()),
+    activeConceptId: v.optional(v.union(v.id("courseConcepts"), v.string(), v.null())),
+  },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) throw new Error("Unauthorized");
@@ -55,9 +66,31 @@ export const createSession = mutation({
     return await ctx.db.insert("tutorSessions", {
       userId: user._id,
       courseId: args.courseId,
+      tutorMode: args.tutorMode || "adaptive",
+      activeHintLevel: 1,
+      activeConceptId: args.activeConceptId || null,
       createdAt: Date.now(),
       updatedAt: Date.now(),
     });
+  }
+});
+
+export const updateSessionMode = mutation({
+  args: {
+    sessionId: v.id("tutorSessions"),
+    tutorMode: v.optional(v.string()),
+    activeHintLevel: v.optional(v.union(v.number(), v.null())),
+    activeConceptId: v.optional(v.union(v.id("courseConcepts"), v.string(), v.null())),
+  },
+  handler: async (ctx, args) => {
+    const session = await ctx.db.get(args.sessionId);
+    if (!session) throw new Error("Session not found");
+    const patch = { updatedAt: Date.now() };
+    if (args.tutorMode !== undefined) patch.tutorMode = args.tutorMode;
+    if (args.activeHintLevel !== undefined) patch.activeHintLevel = args.activeHintLevel;
+    if (args.activeConceptId !== undefined) patch.activeConceptId = args.activeConceptId;
+    await ctx.db.patch(args.sessionId, patch);
+    return await ctx.db.get(args.sessionId);
   }
 });
 
@@ -79,6 +112,22 @@ const citationValidator = v.object({
   excerpt: v.optional(v.string())
 });
 
+export const adaptationValidator = v.optional(v.union(v.object({
+  conceptId: v.optional(v.union(v.string(), v.null())),
+  conceptName: v.optional(v.union(v.string(), v.null())),
+  masteryBand: v.optional(v.union(v.string(), v.null())),
+  masteryPercentage: v.optional(v.union(v.number(), v.null())),
+  confidence: v.optional(v.union(v.string(), v.null())),
+  tutorMode: v.optional(v.union(v.string(), v.null())),
+  pedagogyStrategy: v.optional(v.union(v.string(), v.null())),
+  prerequisiteIntervention: v.optional(v.union(v.boolean(), v.null())),
+  weakPrerequisiteName: v.optional(v.union(v.string(), v.null())),
+  misconceptionAddressed: v.optional(v.union(v.string(), v.null())),
+  hintLevel: v.optional(v.union(v.number(), v.null())),
+  whyThisApproach: v.optional(v.union(v.string(), v.null())),
+  followUpSuggestions: v.optional(v.union(v.array(v.string()), v.null())),
+}), v.null()));
+
 export const addMessage = mutation({
   args: {
     sessionId: v.id("tutorSessions"),
@@ -87,6 +136,7 @@ export const addMessage = mutation({
     grounded: v.optional(v.boolean()),
     retrievalStatus: v.optional(v.string()),
     citations: v.optional(v.array(citationValidator)),
+    adaptation: adaptationValidator,
   },
   handler: async (ctx, args) => {
     const session = await ctx.db.get(args.sessionId);
@@ -108,6 +158,7 @@ export const addMessage = mutation({
       grounded: args.grounded,
       retrievalStatus: args.retrievalStatus,
       citations: args.citations,
+      adaptation: args.adaptation,
       createdAt: Date.now(),
     });
   }
@@ -233,6 +284,7 @@ export const addMessageBackend = mutation({
     grounded: v.optional(v.boolean()),
     retrievalStatus: v.optional(v.string()),
     citations: v.optional(v.array(citationValidator)),
+    adaptation: adaptationValidator,
   },
   handler: async (ctx, args) => {
     const session = await ctx.db.get(args.sessionId);
@@ -246,6 +298,7 @@ export const addMessageBackend = mutation({
       grounded: args.grounded,
       retrievalStatus: args.retrievalStatus,
       citations: args.citations,
+      adaptation: args.adaptation,
       createdAt: Date.now(),
     });
   }

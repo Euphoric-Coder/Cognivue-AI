@@ -184,6 +184,9 @@ export default defineSchema({
     userId: v.id("users"),
     courseId: v.id("courses"),
     title: v.optional(v.string()),
+    tutorMode: v.optional(v.string()), // "adaptive", "explain", "socratic", "hint", "quick_review", "deep_dive"
+    activeHintLevel: v.optional(v.number()),
+    activeConceptId: v.optional(v.union(v.id("courseConcepts"), v.string(), v.null())),
     createdAt: v.number(),
     updatedAt: v.number(),
   })
@@ -216,10 +219,77 @@ export default defineSchema({
       sectionTitle: v.optional(v.string()),
       excerpt: v.optional(v.string())
     }))),
+    adaptation: v.optional(v.union(v.object({
+      conceptId: v.optional(v.union(v.string(), v.null())),
+      conceptName: v.optional(v.union(v.string(), v.null())),
+      masteryBand: v.optional(v.union(v.string(), v.null())),
+      masteryPercentage: v.optional(v.union(v.number(), v.null())),
+      confidence: v.optional(v.union(v.string(), v.null())),
+      tutorMode: v.optional(v.union(v.string(), v.null())),
+      pedagogyStrategy: v.optional(v.union(v.string(), v.null())),
+      prerequisiteIntervention: v.optional(v.union(v.boolean(), v.null())),
+      weakPrerequisiteName: v.optional(v.union(v.string(), v.null())),
+      misconceptionAddressed: v.optional(v.union(v.string(), v.null())),
+      hintLevel: v.optional(v.union(v.number(), v.null())),
+      whyThisApproach: v.optional(v.union(v.string(), v.null())),
+      followUpSuggestions: v.optional(v.union(v.array(v.string()), v.null())),
+    }), v.null())),
     createdAt: v.number(),
   })
     .index("by_session", ["sessionId"])
     .index("by_course", ["courseId"]),
+
+  // V9 Adaptive Tutor Misconceptions and Adaptation Events
+  learnerMisconceptions: defineTable({
+    userId: v.id("users"),
+    courseId: v.id("courses"),
+    conceptId: v.optional(v.union(v.id("courseConcepts"), v.string(), v.null())),
+    conceptName: v.optional(v.union(v.string(), v.null())),
+
+    misconceptionKey: v.string(),
+    description: v.string(),
+
+    evidenceCount: v.number(),
+    confidence: v.string(), // "low" | "medium" | "high"
+    confidenceScore: v.number(), // 0.0 to 1.0
+
+    firstObservedAt: v.number(),
+    lastObservedAt: v.number(),
+
+    active: v.boolean(),
+    sourceResponseIds: v.array(v.string()),
+
+    updatedAt: v.number(),
+  })
+    .index("by_user_course", ["userId", "courseId"])
+    .index("by_user_course_active", ["userId", "courseId", "active"])
+    .index("by_user_concept", ["userId", "conceptId"])
+    .index("by_user_course_key", ["userId", "courseId", "misconceptionKey"]),
+
+  tutorAdaptationEvents: defineTable({
+    userId: v.id("users"),
+    courseId: v.id("courses"),
+    sessionId: v.id("tutorSessions"),
+    messageId: v.optional(v.union(v.id("tutorMessages"), v.string(), v.null())),
+
+    conceptIds: v.array(v.string()),
+    conceptNames: v.array(v.string()),
+
+    masteryBand: v.string(),
+    confidence: v.string(),
+
+    strategy: v.string(),
+    tutorMode: v.string(),
+
+    prerequisiteIntervention: v.boolean(),
+    misconceptionIntervention: v.boolean(),
+    hintLevel: v.optional(v.union(v.number(), v.null())),
+
+    createdAt: v.number(),
+  })
+    .index("by_user_course", ["userId", "courseId"])
+    .index("by_session", ["sessionId"])
+    .index("by_user_course_time", ["userId", "courseId", "createdAt"]),
 
   // V6 Course Knowledge Graph Tables
   courseConcepts: defineTable({
@@ -375,7 +445,12 @@ export default defineSchema({
 
     questionText: v.string(),
 
-    options: v.optional(v.union(v.array(v.string()), v.null())),
+    options: v.optional(v.union(v.array(v.string()), v.array(v.object({ text: v.string(), misconceptionKey: v.optional(v.string()) })), v.null())),
+    distractorMisconceptions: v.optional(v.union(v.array(v.object({
+      optionIndex: v.number(),
+      misconceptionKey: v.string(),
+      description: v.optional(v.string()),
+    })), v.null())),
 
     correctAnswer: v.any(),
     acceptedAnswers: v.optional(v.union(v.array(v.string()), v.null())),

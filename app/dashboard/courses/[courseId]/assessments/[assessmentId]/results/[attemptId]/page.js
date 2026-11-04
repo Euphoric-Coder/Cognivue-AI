@@ -458,6 +458,30 @@ export default function AssessmentResultsPage({ params }) {
                       </div>
                     </div>
                   )}
+
+                  {/* Review with Tutor for incorrect questions (V9 Requirement #76) */}
+                  {!isCorrect && (
+                    <div className="pt-3 border-t flex items-center justify-between">
+                      <span className="text-xs text-muted-foreground">
+                        Need help understanding your mistake?
+                      </span>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="text-xs h-8 border-primary/30 hover:bg-primary/10 flex items-center gap-1.5 font-medium"
+                        onClick={() => {
+                          const qId = q._id;
+                          const rId = item._id;
+                          router.push(
+                            `/dashboard/courses/${courseId}/tutor?reviewQuestionId=${qId}${rId ? `&reviewResponseId=${rId}` : ""}`
+                          );
+                        }}
+                      >
+                        <Sparkles className="w-3.5 h-3.5 text-primary" />
+                        Review with Tutor
+                      </Button>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             );

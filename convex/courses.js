@@ -217,6 +217,39 @@ export const deleteCourse = mutation({
     for (const snap of existingSnapshots) {
       await ctx.db.delete(snap._id);
     }
+
+    // Cascade delete V9 Adaptive Tutor tables
+    const existingMisconceptions = await ctx.db
+      .query("learnerMisconceptions")
+      .withIndex("by_user_course", (q) => q.eq("userId", user._id).eq("courseId", args.courseId))
+      .collect();
+    for (const misc of existingMisconceptions) {
+      await ctx.db.delete(misc._id);
+    }
+
+    const existingAdaptationEvents = await ctx.db
+      .query("tutorAdaptationEvents")
+      .withIndex("by_user_course", (q) => q.eq("userId", user._id).eq("courseId", args.courseId))
+      .collect();
+    for (const evt of existingAdaptationEvents) {
+      await ctx.db.delete(evt._id);
+    }
+
+    // Cascade delete Tutor sessions and messages
+    const existingSessions = await ctx.db
+      .query("tutorSessions")
+      .withIndex("by_course", (q) => q.eq("courseId", args.courseId))
+      .collect();
+    for (const s of existingSessions) {
+      const messages = await ctx.db
+        .query("tutorMessages")
+        .withIndex("by_session", (q) => q.eq("sessionId", s._id))
+        .collect();
+      for (const m of messages) {
+        await ctx.db.delete(m._id);
+      }
+      await ctx.db.delete(s._id);
+    }
     
     // Delete the course
     await ctx.db.delete(args.courseId);

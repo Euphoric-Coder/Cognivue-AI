@@ -39,7 +39,9 @@ export function ConceptDetailsSheet({ concept, courseId, onClose, onSelectConcep
 
   const handleAskTutor = () => {
     const q = `Explain ${concept.name} using my course materials.`;
-    router.push(`/dashboard/courses/${courseId}/tutor?initialQuestion=${encodeURIComponent(q)}`);
+    router.push(
+      `/dashboard/courses/${courseId}/tutor?initialQuestion=${encodeURIComponent(q)}&focusConceptId=${concept._id}`
+    );
   };
 
   const isCore = concept.importance === "core";
