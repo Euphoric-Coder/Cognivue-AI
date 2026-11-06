@@ -563,7 +563,16 @@ export async function processAttemptGradedHelper(ctx, args) {
     observedConceptCount: summary.observedConceptCount,
     totalConceptCount: summary.totalConceptCount,
     reason: args.reason || "assessment_graded",
-    conceptDeltas: deltas,
+    conceptDeltas: deltas.map((d) => ({
+      conceptId: d.conceptId,
+      conceptName: d.conceptName,
+      before: d.before,
+      after: d.after,
+      delta: d.delta,
+      masteryBand: d.masteryBand ?? null,
+      confidence: d.confidence ?? null,
+      evidenceCount: d.evidenceCount ?? null,
+    })),
     timestamp,
   });
 

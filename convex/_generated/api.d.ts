@@ -8,11 +8,13 @@
  * @module
  */
 
+import type * as adaptiveTutor from "../adaptiveTutor.js";
 import type * as assessments from "../assessments.js";
 import type * as courses from "../courses.js";
 import type * as http from "../http.js";
 import type * as ingestion from "../ingestion.js";
 import type * as knowledgeGraph from "../knowledgeGraph.js";
+import type * as learnerModel from "../learnerModel.js";
 import type * as sources from "../sources.js";
 import type * as tutor from "../tutor.js";
 import type * as users from "../users.js";
@@ -24,11 +26,13 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  adaptiveTutor: typeof adaptiveTutor;
   assessments: typeof assessments;
   courses: typeof courses;
   http: typeof http;
   ingestion: typeof ingestion;
   knowledgeGraph: typeof knowledgeGraph;
+  learnerModel: typeof learnerModel;
   sources: typeof sources;
   tutor: typeof tutor;
   users: typeof users;

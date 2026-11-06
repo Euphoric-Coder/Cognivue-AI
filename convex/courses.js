@@ -1,7 +1,7 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 
-async function getCurrentUser(ctx) {
+export async function getCurrentUser(ctx) {
   const identity = await ctx.auth.getUserIdentity();
   if (!identity) return null;
   
@@ -11,7 +11,7 @@ async function getCurrentUser(ctx) {
     .unique();
 }
 
-async function requireUser(ctx) {
+export async function requireUser(ctx) {
   const user = await getCurrentUser(ctx);
   if (!user) throw new Error("Unauthorized");
   return user;
@@ -45,6 +45,8 @@ export const getCourseById = query({
     return course;
   },
 });
+
+export const getCourse = getCourseById;
 
 export const createCourse = mutation({
   args: {

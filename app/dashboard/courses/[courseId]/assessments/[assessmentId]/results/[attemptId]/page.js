@@ -35,6 +35,9 @@ export default function AssessmentResultsPage({ params }) {
   const data = useQuery(api.assessments.getAttemptResponses, { attemptId });
   const startAttempt = useMutation(api.assessments.startAttempt);
   const learnerDeltas = useQuery(api.learnerModel.getAttemptLearnerDeltas, { attemptId });
+  const deltasList = Array.isArray(learnerDeltas)
+    ? learnerDeltas
+    : (learnerDeltas?.conceptDeltas || []);
 
   const [isRetaking, setIsRetaking] = useState(false);
 
@@ -238,7 +241,7 @@ export default function AssessmentResultsPage({ params }) {
       </Card>
 
       {/* Learner Model Updated Section (Requirement 50 & 51) */}
-      {learnerDeltas && learnerDeltas.length > 0 && (
+      {deltasList.length > 0 && (
         <Card className="border-primary/30 shadow-xs bg-card">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between flex-wrap gap-2">
@@ -258,7 +261,7 @@ export default function AssessmentResultsPage({ params }) {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {learnerDeltas.map((d) => {
+              {deltasList.map((d) => {
                 const deltaNum = d.delta ?? (d.after - d.before);
                 const isPositive = deltaNum > 0;
                 const isNegative = deltaNum < 0;

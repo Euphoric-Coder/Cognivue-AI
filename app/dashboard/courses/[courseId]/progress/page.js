@@ -41,7 +41,7 @@ export default function ProgressPage({ params }) {
 
   const summary = useQuery(api.learnerModel.getCourseLearnerSummary, { courseId });
   const conceptStates = useQuery(api.learnerModel.getCourseConceptStates, { courseId });
-  const course = useQuery(api.courses.getCourse, { courseId });
+  const course = useQuery(api.courses.getCourseById, { courseId });
 
   const recomputeModel = useMutation(api.learnerModel.recomputeCourseLearnerModel);
 

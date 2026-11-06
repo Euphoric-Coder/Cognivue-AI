@@ -536,6 +536,7 @@ export default defineSchema({
     .index("by_assessment", ["assessmentId"])
     .index("by_user", ["userId"])
     .index("by_course", ["courseId"])
+    .index("by_user_course", ["userId", "courseId"])
     .index("by_user_assessment", ["userId", "assessmentId"])
     .index("by_assessment_status", ["assessmentId", "status"]),
 
@@ -689,6 +690,9 @@ export default defineSchema({
             before: v.number(),
             after: v.number(),
             delta: v.number(),
+            masteryBand: v.optional(v.union(v.string(), v.null())),
+            confidence: v.optional(v.union(v.string(), v.null())),
+            evidenceCount: v.optional(v.union(v.number(), v.null())),
           })
         ),
         v.null()
