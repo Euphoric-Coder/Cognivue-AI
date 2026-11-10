@@ -704,4 +704,136 @@ export default defineSchema({
     .index("by_user_course", ["userId", "courseId"])
     .index("by_user_course_time", ["userId", "courseId", "timestamp"])
     .index("by_attempt", ["attemptId"]),
+
+  // V10: Personal Study Intelligence Tables
+  studyRecommendations: defineTable({
+    userId: v.id("users"),
+    courseId: v.id("courses"),
+
+    conceptId: v.id("courseConcepts"),
+    conceptName: v.string(),
+    conceptKey: v.optional(v.union(v.string(), v.null())),
+
+    recommendationType: v.string(), // "learn" | "review" | "practice" | "remediate_prerequisite" | "address_misconception" | "spaced_review"
+
+    priorityScore: v.number(), // 0 to 100
+    priorityBand: v.string(), // "critical" | "high" | "medium" | "low"
+
+    reasonCodes: v.array(v.string()),
+    reasonSummary: v.string(),
+    reasonDetails: v.optional(v.any()),
+
+    recommendedSourceIds: v.optional(v.any()),
+    recommendedAssessmentConfig: v.optional(v.any()),
+
+    dueAt: v.optional(v.union(v.number(), v.null())),
+
+    status: v.string(), // "active" | "completed" | "dismissed" | "stale" | "archived"
+    recommendationVersion: v.string(), // "study-v1"
+
+    generatedAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_user_course", ["userId", "courseId"])
+    .index("by_user_course_status", ["userId", "courseId", "status"])
+    .index("by_user_concept", ["userId", "conceptId"])
+    .index("by_course", ["courseId"]),
+
+  studyPlans: defineTable({
+    userId: v.id("users"),
+    courseId: v.id("courses"),
+
+    title: v.string(),
+    planType: v.string(), // "daily" | "weekly" | "exam_preparation" | "revision"
+
+    startDate: v.string(), // "YYYY-MM-DD"
+    endDate: v.string(),
+
+    targetDate: v.optional(v.union(v.string(), v.null())),
+
+    dailyMinutes: v.number(),
+    preferredStudyDays: v.optional(v.union(v.array(v.string()), v.null())),
+
+    status: v.string(), // "active" | "completed" | "archived"
+
+    examReadiness: v.optional(v.union(v.string(), v.null())), // "early" | "developing" | "on_track" | "strong"
+    examReadinessDetails: v.optional(v.any()),
+
+    generatedAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_user_course", ["userId", "courseId"])
+    .index("by_user_course_status", ["userId", "courseId", "status"]),
+
+  studyPlanItems: defineTable({
+    userId: v.id("users"),
+    courseId: v.id("courses"),
+    studyPlanId: v.id("studyPlans"),
+
+    date: v.string(), // "YYYY-MM-DD"
+
+    conceptId: v.optional(v.union(v.id("courseConcepts"), v.null())),
+    conceptName: v.optional(v.union(v.string(), v.null())),
+
+    activityType: v.string(), // "review_source" | "watch_video" | "review_visual" | "practice_quiz" | "mock_exam" | "tutor_review" | "concept_revision"
+
+    durationMinutes: v.number(),
+    priority: v.string(), // "critical" | "high" | "medium" | "low"
+
+    sourceId: v.optional(v.union(v.id("sources"), v.null())),
+    sourceDetails: v.optional(v.any()),
+    assessmentConfig: v.optional(v.any()),
+
+    reason: v.string(),
+
+    status: v.string(), // "pending" | "completed" | "skipped" | "rescheduled"
+    completedAt: v.optional(v.union(v.number(), v.null())),
+
+    createdAt: v.number(),
+  })
+    .index("by_plan", ["studyPlanId"])
+    .index("by_user_course", ["userId", "courseId"])
+    .index("by_user_course_date", ["userId", "courseId", "date"])
+    .index("by_user_course_status", ["userId", "courseId", "status"]),
+
+  conceptReviewStates: defineTable({
+    userId: v.id("users"),
+    courseId: v.id("courses"),
+    conceptId: v.id("courseConcepts"),
+
+    lastReviewedAt: v.optional(v.union(v.number(), v.null())),
+    nextReviewAt: v.number(),
+
+    reviewIntervalDays: v.number(),
+
+    successfulReviews: v.number(),
+    failedReviews: v.number(),
+    lastReviewOutcome: v.optional(v.union(v.string(), v.null())),
+
+    updatedAt: v.number(),
+  })
+    .index("by_user_course", ["userId", "courseId"])
+    .index("by_user_concept", ["userId", "conceptId"])
+    .index("by_user_course_next_review", ["userId", "courseId", "nextReviewAt"]),
+
+  studyActivityEvents: defineTable({
+    userId: v.id("users"),
+    courseId: v.id("courses"),
+
+    conceptId: v.optional(v.union(v.id("courseConcepts"), v.null())),
+    activityType: v.string(),
+
+    sourceId: v.optional(v.union(v.id("sources"), v.null())),
+    studyPlanItemId: v.optional(v.union(v.id("studyPlanItems"), v.null())),
+
+    startedAt: v.number(),
+    completedAt: v.number(),
+
+    durationSeconds: v.number(),
+
+    createdAt: v.number(),
+  })
+    .index("by_user_course", ["userId", "courseId"])
+    .index("by_item", ["studyPlanItemId"])
+    .index("by_concept", ["conceptId"]),
 });

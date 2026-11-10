@@ -10,6 +10,7 @@ import {
   FileCheck2, 
   Network, 
   TrendingUp,
+  CalendarCheck,
   ArrowLeft
 } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -52,6 +53,7 @@ export function CourseWorkspaceNav({ courseId }) {
     { name: "Assessments", href: `/dashboard/courses/${courseId}/assessments`, icon: FileCheck2 },
     { name: "Knowledge Map", href: `/dashboard/courses/${courseId}/knowledge-map`, icon: Network },
     { name: "Progress", href: `/dashboard/courses/${courseId}/progress`, icon: TrendingUp },
+    { name: "Study Plan", href: `/dashboard/courses/${courseId}/study-plan`, icon: CalendarCheck },
   ];
 
   return (

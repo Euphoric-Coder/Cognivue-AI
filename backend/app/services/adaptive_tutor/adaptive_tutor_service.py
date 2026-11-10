@@ -25,6 +25,7 @@ from app.services.adaptive_tutor.misconception_service import MisconceptionServi
 from app.services.adaptive_tutor.learner_context_service import LearnerContextService, AdaptiveTutorContext
 from app.services.adaptive_tutor.pedagogy_engine import PedagogyEngine, PedagogyStrategy
 from app.services.adaptive_tutor.adaptive_prompt_builder import AdaptivePromptBuilder
+from app.services.study_intelligence import StudyIntelligenceService
 
 logger = logging.getLogger(__name__)
 
@@ -39,6 +40,7 @@ class AdaptiveTutorService:
         self.learner_context_service = LearnerContextService(convex_client)
         self.pedagogy_engine = PedagogyEngine()
         self.prompt_builder = AdaptivePromptBuilder()
+        self.study_intelligence_service = StudyIntelligenceService(convex_client)
 
         if settings.gemini_api_key:
             self.genai_client = genai.Client(api_key=settings.gemini_api_key)
@@ -73,6 +75,16 @@ class AdaptiveTutorService:
                 formatted_history.append({"role": msg["role"], "content": msg["content"]})
         except Exception as e:
             logger.warning(f"Could not fetch session history: {e}")
+
+        # 1B. Check if question is a study-intelligence inquiry (Section 49 & 50)
+        if self._is_study_intelligence_query(question):
+            return self._handle_study_query(
+                course_id=course_id,
+                session_id=session_id,
+                user_id=user_id,
+                question=question,
+                formatted_history=formatted_history,
+            )
 
         # 2. Resolve Review Context if requested (Review with Tutor)
         review_context = None
@@ -418,4 +430,131 @@ class AdaptiveTutorService:
             "hintLevel": strategy.hint_level if strategy.mode == "hint" else None,
             "whyThisApproach": strategy.why_this_approach,
             "followUpSuggestions": strategy.follow_up_suggestions,
+        }
+
+    def _is_study_intelligence_query(self, question: str) -> bool:
+        q = question.lower().strip()
+        patterns = [
+            "what should i study",
+            "what to study",
+            "what should i revise",
+            "what to revise",
+            "what am i weakest at",
+            "what are my weaknesses",
+            "weakest topic",
+            "weakest concept",
+            "what prerequisite should i",
+            "which prerequisite",
+            "revise before my exam",
+            "study before my exam",
+            "what should i focus on before my exam",
+            "what to review before exam",
+            "what should i revisit today",
+            "study today",
+            "study next",
+            "study plan",
+        ]
+        return any(p in q for p in patterns)
+
+    def _handle_study_query(
+        self,
+        course_id: str,
+        session_id: str,
+        user_id: str,
+        question: str,
+        formatted_history: List[Dict[str, str]],
+    ) -> Dict[str, Any]:
+        """
+        Grounded study advisor handler (Sections 49 & 50).
+        Retrieves real learner data from StudyIntelligenceService and formats a grounded response.
+        """
+        logger.info(f"ADAPTIVE_TUTOR_STUDY_QUERY: courseId={course_id} user={user_id} q='{question}'")
+        study_ctx = self.study_intelligence_service.get_tutor_study_context(course_id=course_id, user_id=user_id)
+
+        top_recs = study_ctx.get("topRecommendations", [])
+        weak_concepts = study_ctx.get("weakConcepts", [])
+        prereq_blockers = study_ctx.get("prerequisiteBlockers", [])
+        due_reviews = study_ctx.get("dueReviews", [])
+        unassessed = study_ctx.get("unassessedCore", [])
+        active_plan = study_ctx.get("activePlan")
+
+        answer_parts = []
+        q_lower = question.lower()
+
+        if "weak" in q_lower:
+            if weak_concepts:
+                answer_parts.append("Here are the specific concepts where you currently need improvement based on assessment evidence:")
+                for wc in weak_concepts[:3]:
+                    mastery_val = wc.get("reasonDetails", {}).get("mastery")
+                    mastery_str = f"{mastery_val}%" if mastery_val is not None else "developing"
+                    answer_parts.append(f"• **{wc.get('conceptName')}** (Mastery: {mastery_str}) — {wc.get('reasonSummary')}")
+            else:
+                answer_parts.append("You currently have no confirmed weak concepts! Keep taking assessments to track your progress.")
+        elif "prerequisite" in q_lower:
+            if prereq_blockers:
+                answer_parts.append("Here are the foundational prerequisites blocking your progress on dependent topics:")
+                for pb in prereq_blockers[:3]:
+                    answer_parts.append(f"• **{pb.get('conceptName')}** — {pb.get('reasonSummary')}")
+            else:
+                answer_parts.append("You have no active prerequisite blockers identified in your course knowledge graph.")
+        elif "exam" in q_lower:
+            readiness = active_plan.get("examReadiness") if active_plan else None
+            readiness_str = f" (Exam Readiness: {readiness.upper()})" if readiness else ""
+            answer_parts.append(f"Here is your focused exam revision guidance{readiness_str}:")
+            if weak_concepts:
+                answer_parts.append(f"1. **Remediate Weak Core Topics**: {', '.join(w.get('conceptName') for w in weak_concepts[:2])}")
+            if due_reviews:
+                answer_parts.append(f"2. **Spaced Reviews**: {', '.join(dr.get('conceptName') for dr in due_reviews[:2])} are due for retention review.")
+            if prereq_blockers:
+                answer_parts.append(f"3. **Prerequisites**: Review {prereq_blockers[0].get('conceptName')} before attempting advanced questions.")
+        else:
+            # General "What should I study next / today"
+            answer_parts.append("Based on your persistent learner model and course evidence, here is what you should focus on:")
+            for i, r in enumerate(top_recs[:3], 1):
+                c_name = r.get("conceptName")
+                band = r.get("priorityBand", "medium").upper()
+                reason = r.get("reasonSummary", "")
+                answer_parts.append(f"{i}. **{c_name}** [Priority: {band}]\n   • **Why**: {reason}")
+                sources = r.get("recommendedSourceIds") or []
+                if sources:
+                    s = sources[0]
+                    answer_parts.append(f"   • **Suggested Material**: {s.get('sourceName')} ({s.get('evidenceReason')})")
+
+        if active_plan and active_plan.get("dailyMinutes"):
+            answer_parts.append(f"\nYour active study plan targets **{active_plan.get('dailyMinutes')} minutes/day**.")
+
+        final_answer = "\n".join(answer_parts)
+
+        # Log conversation messages to convex
+        try:
+            self.convex_client.mutation("tutor:addMessageBackend", {
+                "sessionId": session_id,
+                "role": "user",
+                "content": question,
+            })
+            self.convex_client.mutation("tutor:addMessageBackend", {
+                "sessionId": session_id,
+                "role": "assistant",
+                "content": final_answer,
+                "grounded": True,
+                "retrievalStatus": "study_intelligence",
+                "citations": [],
+                "adaptation": {
+                    "tutorMode": "study_advisor",
+                    "pedagogyStrategy": "study_intelligence_recommendation",
+                    "whyThisApproach": "Grounded directly in personal study recommendations, learner model, and prerequisite readiness.",
+                },
+            })
+        except Exception as e:
+            logger.warning(f"Could not persist study advisor message to Convex: {e}")
+
+        return {
+            "answer": final_answer,
+            "grounded": True,
+            "citations": [],
+            "retrievalStatus": "study_intelligence",
+            "adaptation": {
+                "tutorMode": "study_advisor",
+                "pedagogyStrategy": "study_intelligence_recommendation",
+            },
         }

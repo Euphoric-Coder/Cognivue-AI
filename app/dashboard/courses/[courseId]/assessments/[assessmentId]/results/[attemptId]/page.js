@@ -20,6 +20,7 @@ import {
   ChevronUp,
   Image as ImageIcon,
   BookOpen,
+  CalendarCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -302,6 +303,48 @@ export default function AssessmentResultsPage({ params }) {
           </CardContent>
         </Card>
       )}
+
+      {/* Recommended Next Steps (Requirement 48 & V10) */}
+      <Card className="border bg-card shadow-xs">
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div className="flex items-center gap-2">
+              <CalendarCheck className="w-4 h-4 text-primary shrink-0" />
+              <CardTitle className="text-base font-semibold">Recommended Next Steps</CardTitle>
+            </div>
+            <Link href={`/dashboard/courses/${courseId}/study-plan`}>
+              <span className="text-xs text-primary hover:underline font-semibold inline-flex items-center gap-1">
+                Open Personal Study Plan <ExternalLink className="w-3 h-3" />
+              </span>
+            </Link>
+          </div>
+          <CardDescription>
+            Personalized study actions generated from your performance and persistent mastery updates.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-3.5 rounded-xl border bg-muted/20">
+            <div className="text-xs text-foreground">
+              <div className="font-semibold mb-0.5">Focus your next study session</div>
+              <p className="text-muted-foreground">
+                Your study priorities and spaced review queue have been automatically updated based on this attempt.
+              </p>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <Link href={`/dashboard/courses/${courseId}/tutor?initialQuestion=${encodeURIComponent("Review my mistakes from my recent assessment attempt and explain what I should focus on.")}`}>
+                <Button variant="outline" size="sm" className="h-8 text-xs">
+                  Review with AI Tutor
+                </Button>
+              </Link>
+              <Link href={`/dashboard/courses/${courseId}/study-plan`}>
+                <Button size="sm" className="h-8 text-xs">
+                  View Study Plan
+                </Button>
+              </Link>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Question by Question Review (Requirement 55) */}
       <div className="space-y-4">

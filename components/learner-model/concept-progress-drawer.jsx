@@ -23,6 +23,7 @@ import {
   Network,
   ExternalLink,
   ShieldCheck,
+  CalendarCheck,
   FileQuestion
 } from "lucide-react";
 import Link from "next/link";
@@ -358,6 +359,16 @@ export function ConceptProgressDrawer({
             {details?.masteryBand === "needs_attention" || details?.masteryBand === "developing"
               ? "Review with Tutor"
               : "Ask Tutor"}
+          </Button>
+
+          <Button
+            variant="default"
+            size="sm"
+            className="flex-1 text-xs"
+            onClick={() => router.push(`/dashboard/courses/${courseId}/study-plan`)}
+          >
+            <CalendarCheck className="w-3.5 h-3.5 mr-1.5" />
+            Study Next
           </Button>
         </div>
       </SheetContent>

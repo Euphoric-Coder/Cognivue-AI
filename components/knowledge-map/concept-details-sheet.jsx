@@ -82,16 +82,26 @@ export function ConceptDetailsSheet({ concept, courseId, onClose, onSelectConcep
             </p>
           )}
 
-          {/* Ask Tutor Action */}
-          <div className="pt-3">
+          {/* Ask Tutor & Study Plan Actions (Section 47) */}
+          <div className="pt-3 grid grid-cols-2 gap-2">
             <Button 
               size="sm" 
-              className="w-full flex items-center justify-center gap-2 font-medium shadow-sm"
+              className="flex items-center justify-center gap-1.5 font-medium shadow-sm text-xs"
               onClick={handleAskTutor}
             >
-              <MessageSquare className="w-4 h-4" />
-              Ask AI Tutor About This Concept
+              <MessageSquare className="w-3.5 h-3.5" />
+              Ask AI Tutor
             </Button>
+            <Link href={`/dashboard/courses/${courseId}/study-plan`}>
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full flex items-center justify-center gap-1.5 font-medium text-xs"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-primary" />
+                Study Plan
+              </Button>
+            </Link>
           </div>
         </SheetHeader>
 

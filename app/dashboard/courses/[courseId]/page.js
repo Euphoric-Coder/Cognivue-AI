@@ -4,7 +4,7 @@ import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { use } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Library, Network, Target, MessageSquare, CheckCircle2, Circle, Image as ImageIcon, FileCheck2 } from "lucide-react";
+import { Library, Network, Target, MessageSquare, CheckCircle2, Circle, Image as ImageIcon, FileCheck2, CalendarCheck } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -145,6 +145,21 @@ export default function CourseOverviewPage({ params }) {
                 {assessmentMetrics
                   ? `${assessmentMetrics.totalQuestionsGenerated} questions · ${assessmentMetrics.completedAttemptsCount} completed`
                   : "Grounded tests & quizzes →"}
+              </p>
+            </CardContent>
+          </Link>
+        </Card>
+
+        <Card className="hover:border-primary/50 transition-colors cursor-pointer">
+          <Link href={`/dashboard/courses/${courseId}/study-plan`}>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Personal Study Plan</CardTitle>
+              <CalendarCheck className="h-4 w-4 text-primary" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">Study Focus</div>
+              <p className="text-xs text-muted-foreground line-clamp-1">
+                Priorities, spaced reviews & daily plans →
               </p>
             </CardContent>
           </Link>

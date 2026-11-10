@@ -16,6 +16,7 @@ import type * as ingestion from "../ingestion.js";
 import type * as knowledgeGraph from "../knowledgeGraph.js";
 import type * as learnerModel from "../learnerModel.js";
 import type * as sources from "../sources.js";
+import type * as studyIntelligence from "../studyIntelligence.js";
 import type * as tutor from "../tutor.js";
 import type * as users from "../users.js";
 
@@ -34,6 +35,7 @@ declare const fullApi: ApiFromModules<{
   knowledgeGraph: typeof knowledgeGraph;
   learnerModel: typeof learnerModel;
   sources: typeof sources;
+  studyIntelligence: typeof studyIntelligence;
   tutor: typeof tutor;
   users: typeof users;
 }>;
