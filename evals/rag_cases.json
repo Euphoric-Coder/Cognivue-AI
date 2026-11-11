@@ -1,0 +1,129 @@
+[
+  {
+    "caseId": "rag-001",
+    "category": "rag",
+    "input": {
+      "query": "What does the Chain Rule state for differentiating a composite function f(g(x))?",
+      "courseId": "eval_fixture_course_ai_calc",
+      "scenarioType": "supported_factual"
+    },
+    "expectedBehavior": {
+      "shouldRefuse": false,
+      "mustIncludeTerms": ["outer", "inner", "f'(g(x))"],
+      "expectedCitationSourceIds": ["src_pdf_calculus"],
+      "referenceAnswer": "The Chain Rule states that the derivative of a composite function f(g(x)) is f'(g(x)) * g'(x), multiplying the outer derivative evaluated at g(x) by the inner derivative g'(x)."
+    },
+    "expectedEvidence": [
+      { "chunkId": "chk_calc_02", "sourceId": "src_pdf_calculus", "locationType": "page", "pageNumber": 5 }
+    ],
+    "expectedConcepts": ["Chain Rule", "Composite Functions"],
+    "metadata": { "difficulty": "easy", "sourceType": "pdf" }
+  },
+  {
+    "caseId": "rag-002",
+    "category": "rag",
+    "input": {
+      "query": "How do ReLU activations address vanishing gradients observed with sigmoid activations?",
+      "courseId": "eval_fixture_course_ai_calc",
+      "scenarioType": "multi_source_synthesis"
+    },
+    "expectedBehavior": {
+      "shouldRefuse": false,
+      "mustIncludeTerms": ["relu", "derivative", "1", "sigmoid", "vanishing"],
+      "expectedCitationSourceIds": ["src_pptx_ml"],
+      "referenceAnswer": "Repeated sigmoid derivatives (< 0.25) cause gradients in early layers to shrink exponentially, whereas ReLU f(x) = max(0, x) has derivative 1 for positive inputs, helping mitigate vanishing gradients."
+    },
+    "expectedEvidence": [
+      { "chunkId": "chk_pptx_01", "sourceId": "src_pptx_ml", "locationType": "slide", "slideNumber": 4 },
+      { "chunkId": "chk_pptx_02", "sourceId": "src_pptx_ml", "locationType": "slide", "slideNumber": 8 }
+    ],
+    "expectedConcepts": ["ReLU Activation", "Vanishing Gradients"],
+    "metadata": { "difficulty": "medium", "sourceType": "pptx" }
+  },
+  {
+    "caseId": "rag-003",
+    "category": "rag",
+    "input": {
+      "query": "What gradient clipping threshold is discussed near the end of Lecture 04 to prevent exploding gradients?",
+      "courseId": "eval_fixture_course_ai_calc",
+      "scenarioType": "video_timeline_late",
+      "videoCoverageCheck": {
+        "sourceId": "src_video_backprop",
+        "expectedSegments": ["chk_vid_early_01", "chk_vid_mid_02", "chk_vid_late_03"],
+        "minTotalChunks": 3
+      }
+    },
+    "expectedBehavior": {
+      "shouldRefuse": false,
+      "mustIncludeTerms": ["clipping", "1.0", "l2"],
+      "expectedCitationSourceIds": ["src_video_backprop"],
+      "expectedTimestampRange": { "startTime": 2160, "endTime": 2325 },
+      "referenceAnswer": "Near the end of Lecture 04 at 36:00, norm-based gradient clipping with threshold tau = 1.0 rescales the gradient vector whenever its L2 norm exceeds tau."
+    },
+    "expectedEvidence": [
+      { "chunkId": "chk_vid_late_03", "sourceId": "src_video_backprop", "locationType": "video", "startTime": 2160, "endTime": 2325 }
+    ],
+    "expectedConcepts": ["Gradient Clipping"],
+    "metadata": { "difficulty": "medium", "sourceType": "video", "timelineSegment": "late" }
+  },
+  {
+    "caseId": "rag-004",
+    "category": "rag",
+    "input": {
+      "query": "In the opening segment of Lecture 04, how are neural network forward passes modeled?",
+      "courseId": "eval_fixture_course_ai_calc",
+      "scenarioType": "video_timeline_early"
+    },
+    "expectedBehavior": {
+      "shouldRefuse": false,
+      "mustIncludeTerms": ["computational graph", "directed acyclic", "activations"],
+      "expectedCitationSourceIds": ["src_video_backprop"],
+      "expectedTimestampRange": { "startTime": 30, "endTime": 115 },
+      "referenceAnswer": "Neural network forward passes are modeled as a directed acyclic computational graph where each node stores intermediate activations."
+    },
+    "expectedEvidence": [
+      { "chunkId": "chk_vid_early_01", "sourceId": "src_video_backprop", "locationType": "video", "startTime": 30, "endTime": 115 }
+    ],
+    "expectedConcepts": ["Backpropagation"],
+    "metadata": { "difficulty": "easy", "sourceType": "video", "timelineSegment": "early" }
+  },
+  {
+    "caseId": "rag-005",
+    "category": "rag",
+    "input": {
+      "query": "What exact batch size did the professor recommend for distributed Transformer pretraining on TPUs?",
+      "courseId": "eval_fixture_course_ai_calc",
+      "scenarioType": "unanswerable_refusal"
+    },
+    "expectedBehavior": {
+      "shouldRefuse": true,
+      "refusalExpected": true,
+      "mustNotContainTerms": ["batch size of 2048", "tpu v4", "4096 tokens"],
+      "referenceAnswer": "INSUFFICIENT_EVIDENCE_REFUSAL"
+    },
+    "expectedEvidence": [],
+    "expectedConcepts": [],
+    "metadata": { "difficulty": "hard", "isNegativeCase": true }
+  },
+  {
+    "caseId": "rag-006",
+    "category": "rag",
+    "input": {
+      "query": "What is the gradient descent weight update equation and what happens if alpha is too large?",
+      "courseId": "eval_fixture_course_ai_calc",
+      "scenarioType": "false_refusal_guard"
+    },
+    "expectedBehavior": {
+      "shouldRefuse": false,
+      "mustIncludeTerms": ["alpha", "diverge", "gradient"],
+      "expectedCitationSourceIds": ["src_pdf_calculus"],
+      "referenceAnswer": "Gradient descent updates weights via w_new = w_old - alpha * grad(L); if alpha is too large, optimization may diverge."
+    },
+    "expectedEvidence": [
+      { "chunkId": "chk_calc_03", "sourceId": "src_pdf_calculus", "locationType": "page", "pageNumber": 9 }
+    ],
+    "expectedConcepts": ["Gradient Descent"],
+    "metadata": { "difficulty": "easy", "sourceType": "pdf" }
+  }
+]
+

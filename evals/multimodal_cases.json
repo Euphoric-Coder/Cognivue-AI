@@ -1,0 +1,83 @@
+[
+  {
+    "caseId": "mm-001",
+    "category": "multimodal",
+    "input": {
+      "query": "In the Training Loss vs Learning Rate chart on slide 11, what happens when alpha=0.01 vs alpha=1.5, and what is the exact loss at epoch 23?",
+      "courseId": "eval_fixture_course_ai_calc",
+      "visualType": "chart",
+      "scenarioType": "chart_trend_and_missing_value_safety"
+    },
+    "expectedBehavior": {
+      "shouldRefuse": false,
+      "mustIncludeTerms": ["0.01", "converg", "1.5", "not labeled"],
+      "mustNotFabricateExactDecimalFor": "epoch 23",
+      "expectedVisualIds": ["vis_chart_loss_01"]
+    },
+    "expectedEvidence": [
+      { "chunkId": "chk_vis_chart_01", "sourceId": "src_pptx_ml", "sourceVisualId": "vis_chart_loss_01", "visualType": "chart", "slideNumber": 11 }
+    ],
+    "expectedConcepts": ["Gradient Descent"],
+    "metadata": { "visualEvaluationType": "chart_trend_safety" }
+  },
+  {
+    "caseId": "mm-002",
+    "category": "multimodal",
+    "input": {
+      "query": "Compare the memory overhead of SGD vs Adam from the Optimizer Comparison Table.",
+      "courseId": "eval_fixture_course_ai_calc",
+      "visualType": "table",
+      "scenarioType": "table_understanding"
+    },
+    "expectedBehavior": {
+      "shouldRefuse": false,
+      "mustIncludeTerms": ["sgd", "1x", "adam", "3x"],
+      "expectedVisualIds": ["vis_table_optim_01"]
+    },
+    "expectedEvidence": [
+      { "chunkId": "chk_vis_table_01", "sourceId": "src_pptx_ml", "sourceVisualId": "vis_table_optim_01", "visualType": "table", "slideNumber": 12 }
+    ],
+    "expectedConcepts": ["Gradient Descent"],
+    "metadata": { "visualEvaluationType": "table_accuracy" }
+  },
+  {
+    "caseId": "mm-003",
+    "category": "multimodal",
+    "input": {
+      "query": "Explain how the multiplication gate diagram in the Lecture 04 keyframe routes gradients to x and y.",
+      "courseId": "eval_fixture_course_ai_calc",
+      "visualType": "video_keyframe",
+      "scenarioType": "diagram_and_timestamp_click_to_seek"
+    },
+    "expectedBehavior": {
+      "shouldRefuse": false,
+      "mustIncludeTerms": ["dL/dz", "multiplication", "x", "y"],
+      "expectedVisualIds": ["vis_kf_compgraph_01"],
+      "expectedTimestampBounds": { "minStart": 0, "maxEnd": 2400, "startTime": 780, "endTime": 810 }
+    },
+    "expectedEvidence": [
+      { "chunkId": "chk_vis_diag_01", "sourceId": "src_video_backprop", "sourceVisualId": "vis_kf_compgraph_01", "visualType": "video_keyframe", "startTime": 780, "endTime": 810 }
+    ],
+    "expectedConcepts": ["Backpropagation"],
+    "metadata": { "visualEvaluationType": "video_keyframe_explanation" }
+  },
+  {
+    "caseId": "mm-004",
+    "category": "multimodal",
+    "input": {
+      "query": "Show me the confusion matrix slide 29 showing class-level F1 scores.",
+      "courseId": "eval_fixture_course_ai_calc",
+      "visualType": "diagram",
+      "scenarioType": "missing_visual_refusal"
+    },
+    "expectedBehavior": {
+      "shouldRefuse": true,
+      "refusalExpected": true,
+      "expectedVisualIds": []
+    },
+    "expectedEvidence": [],
+    "expectedConcepts": [],
+    "metadata": { "visualEvaluationType": "missing_visual_refusal" }
+  }
+]
+

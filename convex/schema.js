@@ -836,4 +836,105 @@ export default defineSchema({
     .index("by_user_course", ["userId", "courseId"])
     .index("by_item", ["studyPlanItemId"])
     .index("by_concept", ["conceptId"]),
+
+  // V11: System Evaluation & Benchmarking Tables
+  evaluationRuns: defineTable({
+    userId: v.id("users"),
+    externalRunId: v.optional(v.string()),
+
+    runType: v.string(), // "rag" | "multimodal" | "knowledge_graph" | "assessment" | "grading" | "learner_model" | "adaptive_tutor" | "study_intelligence" | "security" | "quick_suite" | "full_suite"
+    courseId: v.optional(v.union(v.id("courses"), v.string(), v.null())),
+
+    status: v.string(), // "queued" | "running" | "completed" | "failed"
+
+    datasetVersion: v.string(),
+    evaluatorVersion: v.string(),
+    modelVersion: v.string(),
+    promptVersions: v.optional(v.any()),
+    runConfig: v.optional(v.any()),
+
+    startedAt: v.number(),
+    completedAt: v.optional(v.union(v.number(), v.null())),
+
+    caseCount: v.number(),
+    passedCount: v.number(),
+    failedCount: v.number(),
+    progress: v.optional(v.number()),
+
+    isBaseline: v.optional(v.boolean()),
+    baselineRunId: v.optional(v.union(v.id("evaluationRuns"), v.null())),
+    baselineComparison: v.optional(v.any()),
+    releaseGate: v.optional(v.any()),
+    latencyStats: v.optional(v.any()),
+    usageStats: v.optional(v.any()),
+    failureStats: v.optional(v.any()),
+    errorMessage: v.optional(v.union(v.string(), v.null())),
+
+    createdAt: v.number(),
+  })
+    .index("by_user", ["userId"])
+    .index("by_user_run_type", ["userId", "runType"])
+    .index("by_user_baseline", ["userId", "isBaseline"]),
+
+  evaluationCases: defineTable({
+    userId: v.id("users"),
+    evaluationRunId: v.id("evaluationRuns"),
+
+    caseId: v.string(),
+    category: v.string(),
+
+    input: v.any(),
+    expectedBehavior: v.any(),
+    expectedEvidence: v.optional(v.any()),
+    expectedConcepts: v.optional(v.array(v.string())),
+    metadata: v.optional(v.any()),
+
+    createdAt: v.number(),
+  })
+    .index("by_run", ["evaluationRunId"])
+    .index("by_run_case", ["evaluationRunId", "caseId"])
+    .index("by_user_category", ["userId", "category"]),
+
+  evaluationResults: defineTable({
+    userId: v.id("users"),
+    evaluationRunId: v.id("evaluationRuns"),
+
+    caseId: v.string(),
+    category: v.string(),
+
+    systemOutput: v.any(),
+    passed: v.boolean(),
+    criticalFailure: v.optional(v.boolean()),
+
+    scores: v.any(),
+    failureReasons: v.array(v.string()),
+
+    retrievedEvidenceIds: v.optional(v.array(v.string())),
+    citationValidation: v.optional(v.any()),
+    latencyMs: v.number(),
+
+    humanOverride: v.optional(v.union(v.any(), v.null())),
+
+    createdAt: v.number(),
+  })
+    .index("by_run", ["evaluationRunId"])
+    .index("by_run_passed", ["evaluationRunId", "passed"])
+    .index("by_run_category", ["evaluationRunId", "category"])
+    .index("by_run_case", ["evaluationRunId", "caseId"]),
+
+  evaluationMetrics: defineTable({
+    userId: v.id("users"),
+    evaluationRunId: v.id("evaluationRuns"),
+
+    metricName: v.string(),
+    value: v.number(),
+    numerator: v.optional(v.union(v.number(), v.null())),
+    denominator: v.optional(v.union(v.number(), v.null())),
+    category: v.string(),
+    description: v.optional(v.string()),
+
+    createdAt: v.number(),
+  })
+    .index("by_run", ["evaluationRunId"])
+    .index("by_run_category", ["evaluationRunId", "category"]),
 });

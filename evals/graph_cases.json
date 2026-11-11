@@ -1,0 +1,81 @@
+[
+  {
+    "caseId": "kg-001",
+    "category": "knowledge_graph",
+    "input": {
+      "concepts": [
+        { "_id": "c1", "name": "Composite Functions", "importance": "supporting", "evidenceIds": ["chk_calc_01"] },
+        { "_id": "c2", "name": "Chain Rule", "importance": "core", "evidenceIds": ["chk_calc_02"] },
+        { "_id": "c3", "name": "Backpropagation", "importance": "core", "evidenceIds": ["chk_vid_mid_02"] },
+        { "_id": "c4", "name": "ReLU Activation", "importance": "supporting", "evidenceIds": ["chk_pptx_02"] }
+      ],
+      "relationships": [
+        { "fromConceptId": "c1", "toConceptId": "c2", "relationType": "PREREQUISITE_OF", "evidenceIds": ["chk_calc_01"] },
+        { "fromConceptId": "c2", "toConceptId": "c3", "relationType": "PREREQUISITE_OF", "evidenceIds": ["chk_vid_mid_02"] }
+      ],
+      "evidencePoolIds": ["chk_calc_01", "chk_calc_02", "chk_vid_mid_02", "chk_pptx_02"]
+    },
+    "expectedBehavior": {
+      "expectedConceptNames": ["Composite Functions", "Chain Rule", "Backpropagation", "ReLU Activation"],
+      "expectedEdges": [
+        ["Composite Functions", "Chain Rule", "PREREQUISITE_OF"],
+        ["Chain Rule", "Backpropagation", "PREREQUISITE_OF"]
+      ],
+      "require100PctTraceability": true,
+      "mustBeAcyclicPrerequisites": true
+    },
+    "expectedEvidence": [
+      { "chunkId": "chk_calc_01" },
+      { "chunkId": "chk_calc_02" },
+      { "chunkId": "chk_vid_mid_02" },
+      { "chunkId": "chk_pptx_02" }
+    ],
+    "expectedConcepts": ["Composite Functions", "Chain Rule", "Backpropagation", "ReLU Activation"],
+    "metadata": { "scenarioType": "gold_graph_precision_recall" }
+  },
+  {
+    "caseId": "kg-002",
+    "category": "knowledge_graph",
+    "input": {
+      "rawConcepts": [
+        { "_id": "c_dup_1", "name": "Chain Rule", "aliases": ["Chain Rule Differentiation"], "importance": "core", "evidenceIds": ["chk_calc_02"] },
+        { "_id": "c_dup_2", "name": "The Chain Rule Method", "aliases": [], "importance": "core", "evidenceIds": ["chk_vid_mid_02"] },
+        { "_id": "c_other", "name": "Gradient Descent", "aliases": [], "importance": "core", "evidenceIds": ["chk_calc_03"] }
+      ]
+    },
+    "expectedBehavior": {
+      "expectedMergedCount": 2,
+      "canonicalNamesExpected": ["Chain Rule", "Gradient Descent"],
+      "duplicateMergeRequired": true
+    },
+    "expectedEvidence": [{ "chunkId": "chk_calc_02" }, { "chunkId": "chk_vid_mid_02" }],
+    "expectedConcepts": ["Chain Rule", "Gradient Descent"],
+    "metadata": { "scenarioType": "duplicate_alias_merge" }
+  },
+  {
+    "caseId": "kg-003",
+    "category": "knowledge_graph",
+    "input": {
+      "concepts": [
+        { "_id": "c1", "name": "Composite Functions", "importance": "core", "evidenceIds": ["chk_calc_01"] },
+        { "_id": "c2", "name": "Chain Rule", "importance": "core", "evidenceIds": ["chk_calc_02"] },
+        { "_id": "c_ungrounded", "name": "Quantum Gravity", "importance": "core", "evidenceIds": [] }
+      ],
+      "relationships": [
+        { "fromConceptId": "c1", "toConceptId": "c2", "relationType": "PREREQUISITE_OF", "evidenceIds": ["chk_calc_01"] },
+        { "fromConceptId": "c2", "toConceptId": "c1", "relationType": "PREREQUISITE_OF", "evidenceIds": ["chk_calc_02"] },
+        { "fromConceptId": "c1", "toConceptId": "c_ungrounded", "relationType": "RELATED_TO", "evidenceIds": [] }
+      ],
+      "evidencePoolIds": ["chk_calc_01", "chk_calc_02"]
+    },
+    "expectedBehavior": {
+      "shouldRemoveUngroundedConcept": "c_ungrounded",
+      "shouldRemoveUngroundedEdges": true,
+      "mustBreakPrerequisiteCycle": true
+    },
+    "expectedEvidence": [{ "chunkId": "chk_calc_01" }, { "chunkId": "chk_calc_02" }],
+    "expectedConcepts": ["Composite Functions", "Chain Rule"],
+    "metadata": { "scenarioType": "cycle_and_traceability_enforcement" }
+  }
+]
+

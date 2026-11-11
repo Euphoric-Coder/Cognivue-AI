@@ -1,0 +1,204 @@
+{
+  "courseId": "eval_fixture_course_ai_calc",
+  "userId": "eval_fixture_user_alpha",
+  "otherCourseId": "eval_fixture_course_history_isolated",
+  "otherUserId": "eval_fixture_user_beta",
+  "sources": [
+    {
+      "_id": "src_pdf_calculus",
+      "courseId": "eval_fixture_course_ai_calc",
+      "userId": "eval_fixture_user_alpha",
+      "title": "Calculus Foundations Notes.pdf",
+      "type": "pdf",
+      "status": "ready"
+    },
+    {
+      "_id": "src_pptx_ml",
+      "courseId": "eval_fixture_course_ai_calc",
+      "userId": "eval_fixture_user_alpha",
+      "title": "Neural Networks & Optimization.pptx",
+      "type": "pptx",
+      "status": "ready"
+    },
+    {
+      "_id": "src_video_backprop",
+      "courseId": "eval_fixture_course_ai_calc",
+      "userId": "eval_fixture_user_alpha",
+      "title": "Lecture 04: Backpropagation & Chain Rule.mp4",
+      "type": "video",
+      "durationSeconds": 2400,
+      "status": "ready"
+    },
+    {
+      "_id": "src_pdf_isolated_history",
+      "courseId": "eval_fixture_course_history_isolated",
+      "userId": "eval_fixture_user_beta",
+      "title": "Roman Empire History.pdf",
+      "type": "pdf",
+      "status": "ready"
+    }
+  ],
+  "chunks": [
+    {
+      "_id": "chk_calc_01",
+      "sourceId": "src_pdf_calculus",
+      "courseId": "eval_fixture_course_ai_calc",
+      "sourceName": "Calculus Foundations Notes.pdf",
+      "locationType": "page",
+      "pageNumber": 2,
+      "evidenceType": "text",
+      "sectionTitle": "Composite Functions",
+      "text": "A composite function f(g(x)) applies an inner function g first and passes its output into an outer function f. Understanding function decomposition is required before applying the Chain Rule."
+    },
+    {
+      "_id": "chk_calc_02",
+      "sourceId": "src_pdf_calculus",
+      "courseId": "eval_fixture_course_ai_calc",
+      "sourceName": "Calculus Foundations Notes.pdf",
+      "locationType": "page",
+      "pageNumber": 5,
+      "evidenceType": "text",
+      "sectionTitle": "Chain Rule Definition",
+      "text": "The Chain Rule states that the derivative of a composite function f(g(x)) is f'(g(x)) * g'(x), multiplying the derivative of the outer function evaluated at g(x) by the derivative of the inner function g(x)."
+    },
+    {
+      "_id": "chk_calc_03",
+      "sourceId": "src_pdf_calculus",
+      "courseId": "eval_fixture_course_ai_calc",
+      "sourceName": "Calculus Foundations Notes.pdf",
+      "locationType": "page",
+      "pageNumber": 9,
+      "evidenceType": "text",
+      "sectionTitle": "Gradient Descent Update Step",
+      "text": "Gradient descent iteratively updates model weights w by subtracting the learning rate alpha multiplied by the gradient of the loss function: w_new = w_old - alpha * grad(L). If alpha is too large, optimization may diverge."
+    },
+    {
+      "_id": "chk_pptx_01",
+      "sourceId": "src_pptx_ml",
+      "courseId": "eval_fixture_course_ai_calc",
+      "sourceName": "Neural Networks & Optimization.pptx",
+      "locationType": "slide",
+      "slideNumber": 4,
+      "evidenceType": "text",
+      "sectionTitle": "Slide 4: Vanishing Gradients",
+      "text": "During deep network training with sigmoid activations, repeated multiplication of small derivatives (< 0.25) causes gradients in early layers to shrink exponentially toward zero, slowing weight updates."
+    },
+    {
+      "_id": "chk_pptx_02",
+      "sourceId": "src_pptx_ml",
+      "courseId": "eval_fixture_course_ai_calc",
+      "sourceName": "Neural Networks & Optimization.pptx",
+      "locationType": "slide",
+      "slideNumber": 8,
+      "evidenceType": "text",
+      "sectionTitle": "Slide 8: ReLU Activation Benefits",
+      "text": "The Rectified Linear Unit (ReLU) is defined as f(x) = max(0, x). For positive inputs its derivative is constantly 1, which helps mitigate vanishing gradients compared to sigmoid."
+    },
+    {
+      "_id": "chk_vid_early_01",
+      "sourceId": "src_video_backprop",
+      "courseId": "eval_fixture_course_ai_calc",
+      "sourceName": "Lecture 04: Backpropagation & Chain Rule.mp4",
+      "locationType": "video",
+      "startTime": 30,
+      "endTime": 115,
+      "videoDuration": 2400,
+      "evidenceType": "transcript",
+      "sectionTitle": "00:30-01:55 Course Motivation & Computational Graphs",
+      "text": "In the opening segment of Lecture 04, we model neural network forward passes as a directed acyclic computational graph where each node stores intermediate activations for derivative reuse."
+    },
+    {
+      "_id": "chk_vid_mid_02",
+      "sourceId": "src_video_backprop",
+      "courseId": "eval_fixture_course_ai_calc",
+      "sourceName": "Lecture 04: Backpropagation & Chain Rule.mp4",
+      "locationType": "video",
+      "startTime": 740,
+      "endTime": 850,
+      "videoDuration": 2400,
+      "evidenceType": "transcript",
+      "sectionTitle": "12:20-14:10 Backward Pass Local Gradients",
+      "text": "At timestamp 12:20, backpropagation applies the Chain Rule backward from the loss node: each gate multiplies its upstream gradient by its local derivative computed during the forward pass."
+    },
+    {
+      "_id": "chk_vid_late_03",
+      "sourceId": "src_video_backprop",
+      "courseId": "eval_fixture_course_ai_calc",
+      "sourceName": "Lecture 04: Backpropagation & Chain Rule.mp4",
+      "locationType": "video",
+      "startTime": 2160,
+      "endTime": 2325,
+      "videoDuration": 2400,
+      "evidenceType": "transcript",
+      "sectionTitle": "36:00-38:45 Gradient Clipping & Learning Rate Warmup",
+      "text": "Near the end of Lecture 04 at 36:00, we address exploding gradients using norm-based gradient clipping with threshold tau = 1.0, rescaling the gradient vector whenever its L2 norm exceeds tau."
+    },
+    {
+      "_id": "chk_vis_chart_01",
+      "sourceId": "src_pptx_ml",
+      "courseId": "eval_fixture_course_ai_calc",
+      "sourceName": "Neural Networks & Optimization.pptx",
+      "locationType": "slide",
+      "slideNumber": 11,
+      "evidenceType": "visual",
+      "visualType": "chart",
+      "sourceVisualId": "vis_chart_loss_01",
+      "sectionTitle": "Training Loss vs Learning Rate Chart",
+      "text": "Chart Visual Summary: Training Loss Curve across Learning Rates. Shows alpha=0.01 converging smoothly downward over 50 epochs, while alpha=1.5 oscillates sharply upward indicating divergence. Exact intermediate epoch decimals are not labeled on the curve."
+    },
+    {
+      "_id": "chk_vis_table_01",
+      "sourceId": "src_pptx_ml",
+      "courseId": "eval_fixture_course_ai_calc",
+      "sourceName": "Neural Networks & Optimization.pptx",
+      "locationType": "slide",
+      "slideNumber": 12,
+      "evidenceType": "visual",
+      "visualType": "table",
+      "sourceVisualId": "vis_table_optim_01",
+      "sectionTitle": "Optimizer Comparison Table",
+      "text": "Table Columns: Optimizer | Update Rule | Memory Overhead. Rows: SGD | Uses raw negative gradient | Low (1x params); Adam | Maintains first and second moment estimates | High (3x params)."
+    },
+    {
+      "_id": "chk_vis_diag_01",
+      "sourceId": "src_video_backprop",
+      "courseId": "eval_fixture_course_ai_calc",
+      "sourceName": "Lecture 04: Backpropagation & Chain Rule.mp4",
+      "locationType": "video",
+      "startTime": 780,
+      "endTime": 810,
+      "videoDuration": 2400,
+      "evidenceType": "visual",
+      "visualType": "video_keyframe",
+      "sourceVisualId": "vis_kf_compgraph_01",
+      "sectionTitle": "Computational Graph Backward Arrow Diagram",
+      "text": "Keyframe Diagram at 13:00 showing multiplication gate z = x * y receiving upstream gradient dL/dz and routing x * dL/dz to y and y * dL/dz to x."
+    },
+    {
+      "_id": "chk_isolated_history",
+      "sourceId": "src_pdf_isolated_history",
+      "courseId": "eval_fixture_course_history_isolated",
+      "sourceName": "Roman Empire History.pdf",
+      "locationType": "page",
+      "pageNumber": 1,
+      "evidenceType": "text",
+      "sectionTitle": "Pax Romana",
+      "text": "Pax Romana was a 200-year period of relative peace and stability across the Roman Empire beginning under Emperor Augustus in 27 BCE. SECRET_ISOLATION_TOKEN_BETA_99."
+    }
+  ],
+  "concepts": [
+    { "_id": "con_composite", "name": "Composite Functions", "importance": "supporting", "aliases": ["Function Composition"] },
+    { "_id": "con_chain_rule", "name": "Chain Rule", "importance": "core", "aliases": ["Chain Rule Differentiation"] },
+    { "_id": "con_backprop", "name": "Backpropagation", "importance": "core", "aliases": ["Backward Pass"] },
+    { "_id": "con_grad_descent", "name": "Gradient Descent", "importance": "core", "aliases": [] },
+    { "_id": "con_relu", "name": "ReLU Activation", "importance": "supporting", "aliases": ["Rectified Linear Unit"] },
+    { "_id": "con_vanishing", "name": "Vanishing Gradients", "importance": "core", "aliases": [] },
+    { "_id": "con_clipping", "name": "Gradient Clipping", "importance": "supporting", "aliases": [] }
+  ],
+  "relationships": [
+    { "fromConceptId": "con_composite", "toConceptId": "con_chain_rule", "relationType": "PREREQUISITE_OF", "evidenceIds": ["chk_calc_01"] },
+    { "fromConceptId": "con_chain_rule", "toConceptId": "con_backprop", "relationType": "PREREQUISITE_OF", "evidenceIds": ["chk_vid_mid_02"] },
+    { "fromConceptId": "con_vanishing", "toConceptId": "con_relu", "relationType": "ADDRESSED_BY", "evidenceIds": ["chk_pptx_01", "chk_pptx_02"] }
+  ]
+}
+

@@ -1,0 +1,88 @@
+[
+  {
+    "caseId": "lm-001",
+    "category": "learner_model",
+    "input": {
+      "invariantType": "monotonicity",
+      "baseObservations": [
+        { "observationKey": "obs_1", "scoreFraction": 0.0, "difficulty": "medium", "questionType": "mcq", "correctness": "incorrect", "timestamp": 1730000000000 },
+        { "observationKey": "obs_2", "scoreFraction": 1.0, "difficulty": "medium", "questionType": "mcq", "correctness": "correct", "timestamp": 1730086400000 }
+      ],
+      "additionalCorrect": { "observationKey": "obs_3", "scoreFraction": 1.0, "difficulty": "medium", "questionType": "mcq", "correctness": "correct", "timestamp": 1730172800000 },
+      "additionalIncorrect": { "observationKey": "obs_4", "scoreFraction": 0.0, "difficulty": "medium", "questionType": "mcq", "correctness": "incorrect", "timestamp": 1730172800000 },
+      "referenceTimestamp": 1730259200000
+    },
+    "expectedBehavior": {
+      "correctMustIncreaseOrHold": true,
+      "incorrectMustDecrease": true
+    },
+    "expectedEvidence": [],
+    "expectedConcepts": ["Chain Rule"],
+    "metadata": { "invariant": "monotonicity" }
+  },
+  {
+    "caseId": "lm-002",
+    "category": "learner_model",
+    "input": {
+      "invariantType": "idempotency_deduplication",
+      "observations": [
+        { "observationKey": "attempt_a_q1", "scoreFraction": 1.0, "difficulty": "medium", "questionType": "mcq", "correctness": "correct", "timestamp": 1730000000000 },
+        { "observationKey": "attempt_a_q2", "scoreFraction": 0.0, "difficulty": "hard", "questionType": "short_answer", "correctness": "incorrect", "timestamp": 1730086400000 }
+      ],
+      "duplicateRetrySubmission": [
+        { "observationKey": "attempt_a_q1", "scoreFraction": 1.0, "difficulty": "medium", "questionType": "mcq", "correctness": "correct", "timestamp": 1730000000000 },
+        { "observationKey": "attempt_a_q1", "scoreFraction": 1.0, "difficulty": "medium", "questionType": "mcq", "correctness": "correct", "timestamp": 1730000000000 },
+        { "observationKey": "attempt_a_q2", "scoreFraction": 0.0, "difficulty": "hard", "questionType": "short_answer", "correctness": "incorrect", "timestamp": 1730086400000 }
+      ],
+      "referenceTimestamp": 1730172800000
+    },
+    "expectedBehavior": {
+      "mustNotDoubleCount": true,
+      "dedupCountExpected": 2
+    },
+    "expectedEvidence": [],
+    "expectedConcepts": ["Backpropagation"],
+    "metadata": { "invariant": "idempotency" }
+  },
+  {
+    "caseId": "lm-003",
+    "category": "learner_model",
+    "input": {
+      "invariantType": "low_evidence_confidence_guard",
+      "observations": [
+        { "observationKey": "single_easy", "scoreFraction": 1.0, "difficulty": "easy", "questionType": "mcq", "correctness": "correct", "timestamp": 1730172800000 }
+      ],
+      "referenceTimestamp": 1730172900000
+    },
+    "expectedBehavior": {
+      "forbiddenConfidenceLevels": ["high"],
+      "forbiddenMasteryBands": ["strong", "proficient"]
+    },
+    "expectedEvidence": [],
+    "expectedConcepts": ["Gradient Descent"],
+    "metadata": { "invariant": "confidence_calibration" }
+  },
+  {
+    "caseId": "lm-004",
+    "category": "learner_model",
+    "input": {
+      "invariantType": "recency_stability",
+      "recentErrorObs": [
+        { "observationKey": "old_correct", "scoreFraction": 1.0, "difficulty": "medium", "questionType": "mcq", "correctness": "correct", "timestamp": 1727000000000 },
+        { "observationKey": "recent_wrong", "scoreFraction": 0.0, "difficulty": "medium", "questionType": "mcq", "correctness": "incorrect", "timestamp": 1730172800000 }
+      ],
+      "olderErrorObs": [
+        { "observationKey": "recent_correct", "scoreFraction": 1.0, "difficulty": "medium", "questionType": "mcq", "correctness": "correct", "timestamp": 1730172800000 },
+        { "observationKey": "old_wrong", "scoreFraction": 0.0, "difficulty": "medium", "questionType": "mcq", "correctness": "incorrect", "timestamp": 1727000000000 }
+      ],
+      "referenceTimestamp": 1730259200000
+    },
+    "expectedBehavior": {
+      "recentErrorLowerThanOlderError": true
+    },
+    "expectedEvidence": [],
+    "expectedConcepts": ["Chain Rule"],
+    "metadata": { "invariant": "recency_weighting" }
+  }
+]
+

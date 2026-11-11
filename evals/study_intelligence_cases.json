@@ -1,0 +1,96 @@
+[
+  {
+    "caseId": "si-001",
+    "category": "study_intelligence",
+    "input": {
+      "scenarioType": "weak_beats_strong_and_prereq_blocker",
+      "concepts": [
+        { "_id": "con_composite", "name": "Composite Functions", "importance": "supporting" },
+        { "_id": "con_chain_rule", "name": "Chain Rule", "importance": "core" },
+        { "_id": "con_grad_descent", "name": "Gradient Descent", "importance": "core" }
+      ],
+      "learnerStates": [
+        { "conceptId": "con_composite", "masteryProbability": 0.45, "masteryBand": "developing", "confidence": "medium", "evidenceCount": 3 },
+        { "conceptId": "con_chain_rule", "masteryProbability": 0.32, "masteryBand": "needs_attention", "confidence": "high", "evidenceCount": 5 },
+        { "conceptId": "con_grad_descent", "masteryProbability": 0.94, "masteryBand": "strong", "confidence": "high", "evidenceCount": 6 }
+      ],
+      "relationships": [
+        { "fromConceptId": "con_composite", "toConceptId": "con_chain_rule", "relationType": "PREREQUISITE_OF" }
+      ],
+      "activeMisconceptions": [
+        { "conceptId": "con_chain_rule", "description": "Drops inner derivative g'(x)", "status": "active" }
+      ],
+      "reviewStates": []
+    },
+    "expectedBehavior": {
+      "topRecommendedConceptId": "con_chain_rule",
+      "strongestMustRankLast": "con_grad_descent",
+      "mustFlagPrereqBlockerConcept": "con_composite",
+      "allMustHaveReasonCodes": true
+    },
+    "expectedEvidence": [],
+    "expectedConcepts": ["Chain Rule", "Composite Functions"],
+    "metadata": { "scenarioType": "ranking_and_explainability" }
+  },
+  {
+    "caseId": "si-002",
+    "category": "study_intelligence",
+    "input": {
+      "scenarioType": "unassessed_never_labeled_weak",
+      "concept": { "_id": "con_clipping", "name": "Gradient Clipping", "importance": "supporting" },
+      "learnerState": { "conceptId": "con_clipping", "evidenceCount": 0, "masteryBand": "insufficient_evidence" }
+    },
+    "expectedBehavior": {
+      "expectedReasonCode": "NOT_ASSESSED",
+      "forbiddenReasonCodes": ["LOW_MASTERY"],
+      "expectedDetailBand": "not_assessed"
+    },
+    "expectedEvidence": [],
+    "expectedConcepts": ["Gradient Clipping"],
+    "metadata": { "scenarioType": "unassessed_semantics" }
+  },
+  {
+    "caseId": "si-003",
+    "category": "study_intelligence",
+    "input": {
+      "scenarioType": "spaced_review_and_daily_budget",
+      "dailyMinutes": 25,
+      "reviewSeed": { "reviewIntervalDays": 3, "successfulReviews": 1, "failedReviews": 0 }
+    },
+    "expectedBehavior": {
+      "successIntervalDaysExpected": 7,
+      "failIntervalDaysExpected": 1,
+      "scheduledMinutesMax": 25
+    },
+    "expectedEvidence": [],
+    "expectedConcepts": ["Chain Rule"],
+    "metadata": { "scenarioType": "spaced_review_and_budget" }
+  },
+  {
+    "caseId": "si-004",
+    "category": "study_intelligence",
+    "input": {
+      "scenarioType": "full_closed_loop_reprioritization",
+      "concept": { "_id": "con_chain_rule", "name": "Chain Rule", "importance": "core" },
+      "initialObservations": [
+        { "observationKey": "loop_fail_1", "scoreFraction": 0.0, "difficulty": "medium", "questionType": "mcq", "correctness": "incorrect", "timestamp": 1730000000000 },
+        { "observationKey": "loop_fail_2", "scoreFraction": 0.0, "difficulty": "medium", "questionType": "short_answer", "correctness": "incorrect", "timestamp": 1730003600000 },
+        { "observationKey": "loop_fail_3", "scoreFraction": 0.5, "difficulty": "easy", "questionType": "mcq", "correctness": "partial", "timestamp": 1730007200000 }
+      ],
+      "remedialObservations": [
+        { "observationKey": "loop_pass_1", "scoreFraction": 1.0, "difficulty": "medium", "questionType": "mcq", "correctness": "correct", "timestamp": 1730100000000 },
+        { "observationKey": "loop_pass_2", "scoreFraction": 1.0, "difficulty": "hard", "questionType": "short_answer", "correctness": "correct", "timestamp": 1730103600000 },
+        { "observationKey": "loop_pass_3", "scoreFraction": 1.0, "difficulty": "hard", "questionType": "mcq", "correctness": "correct", "timestamp": 1730107200000 },
+        { "observationKey": "loop_pass_4", "scoreFraction": 1.0, "difficulty": "medium", "questionType": "mcq", "correctness": "correct", "timestamp": 1730110800000 }
+      ]
+    },
+    "expectedBehavior": {
+      "masteryMustIncrease": true,
+      "priorityMustDrop": true
+    },
+    "expectedEvidence": [],
+    "expectedConcepts": ["Chain Rule"],
+    "metadata": { "scenarioType": "assessment_to_study_loop" }
+  }
+]
+

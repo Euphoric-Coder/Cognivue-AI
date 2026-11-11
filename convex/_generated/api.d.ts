@@ -11,6 +11,7 @@
 import type * as adaptiveTutor from "../adaptiveTutor.js";
 import type * as assessments from "../assessments.js";
 import type * as courses from "../courses.js";
+import type * as evaluations from "../evaluations.js";
 import type * as http from "../http.js";
 import type * as ingestion from "../ingestion.js";
 import type * as knowledgeGraph from "../knowledgeGraph.js";
@@ -30,6 +31,7 @@ declare const fullApi: ApiFromModules<{
   adaptiveTutor: typeof adaptiveTutor;
   assessments: typeof assessments;
   courses: typeof courses;
+  evaluations: typeof evaluations;
   http: typeof http;
   ingestion: typeof ingestion;
   knowledgeGraph: typeof knowledgeGraph;

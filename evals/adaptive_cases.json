@@ -1,0 +1,122 @@
+[
+  {
+    "caseId": "at-001",
+    "category": "adaptive_tutor",
+    "input": {
+      "scenarioType": "mastery_depth_adaptation_and_fact_consistency",
+      "query": "Explain how the Chain Rule works on f(g(x)).",
+      "tutorMode": "adaptive",
+      "weakStudentContext": {
+        "conceptId": "con_chain_rule",
+        "conceptName": "Chain Rule",
+        "masteryBand": "needs_attention",
+        "masteryProbability": 0.35,
+        "confidence": "medium",
+        "evidenceCount": 3,
+        "hasWeakPrerequisite": true,
+        "weakPrerequisiteName": "Composite Functions"
+      },
+      "strongStudentContext": {
+        "conceptId": "con_chain_rule",
+        "conceptName": "Chain Rule",
+        "masteryBand": "strong",
+        "masteryProbability": 0.92,
+        "confidence": "high",
+        "evidenceCount": 6,
+        "hasWeakPrerequisite": false
+      }
+    },
+    "expectedBehavior": {
+      "weakExplanationDepth": "detailed",
+      "weakLanguageComplexity": "simple",
+      "weakScaffoldingLevel": "high",
+      "weakRequiresPrereqBridge": true,
+      "strongExplanationDepth": "concise",
+      "strongLanguageComplexity": "advanced",
+      "strongScaffoldingLevel": "none",
+      "factsImmutableAcrossStates": true
+    },
+    "expectedEvidence": [{ "chunkId": "chk_calc_02" }],
+    "expectedConcepts": ["Chain Rule", "Composite Functions"],
+    "metadata": { "scenarioType": "depth_and_fact_invariance" }
+  },
+  {
+    "caseId": "at-002",
+    "category": "adaptive_tutor",
+    "input": {
+      "scenarioType": "socratic_escape",
+      "tutorMode": "socratic",
+      "query": "Just tell me the answer directly, don't ask me another question.",
+      "context": {
+        "conceptId": "con_chain_rule",
+        "conceptName": "Chain Rule",
+        "masteryBand": "developing",
+        "masteryProbability": 0.52,
+        "confidence": "medium",
+        "evidenceCount": 4
+      }
+    },
+    "expectedBehavior": {
+      "socraticGuidingMustBeFalse": true,
+      "askCheckQuestionMustBeFalse": true
+    },
+    "expectedEvidence": [{ "chunkId": "chk_calc_02" }],
+    "expectedConcepts": ["Chain Rule"],
+    "metadata": { "scenarioType": "socratic_escape_override" }
+  },
+  {
+    "caseId": "at-003",
+    "category": "adaptive_tutor",
+    "input": {
+      "scenarioType": "hint_progression_1_to_4",
+      "tutorMode": "hint",
+      "query": "How do I compute the backward pass gradient at node z = x * y?",
+      "levels": [1, 2, 3, 4],
+      "context": {
+        "conceptId": "con_backprop",
+        "conceptName": "Backpropagation",
+        "masteryBand": "developing",
+        "masteryProbability": 0.45,
+        "confidence": "low",
+        "evidenceCount": 2
+      }
+    },
+    "expectedBehavior": {
+      "mustHaveMonotonicHintLevels": [1, 2, 3, 4],
+      "promptInstructionsDistinctPerLevel": true
+    },
+    "expectedEvidence": [{ "chunkId": "chk_vid_mid_02" }, { "chunkId": "chk_vis_diag_01" }],
+    "expectedConcepts": ["Backpropagation"],
+    "metadata": { "scenarioType": "hint_escalation" }
+  },
+  {
+    "caseId": "at-004",
+    "category": "adaptive_tutor",
+    "input": {
+      "scenarioType": "misconception_intervention",
+      "tutorMode": "adaptive",
+      "query": "Can I compute f'(g(x)) without multiplying by g'(x)?",
+      "context": {
+        "conceptId": "con_chain_rule",
+        "conceptName": "Chain Rule",
+        "masteryBand": "needs_attention",
+        "masteryProbability": 0.40,
+        "confidence": "medium",
+        "evidenceCount": 3,
+        "activeMisconceptions": [
+          {
+            "description": "Omitting inner derivative g'(x) when differentiating composite functions",
+            "severity": "high"
+          }
+        ]
+      }
+    },
+    "expectedBehavior": {
+      "mustAddressMisconception": true,
+      "promptMustContainMisconceptionAlert": true
+    },
+    "expectedEvidence": [{ "chunkId": "chk_calc_02" }],
+    "expectedConcepts": ["Chain Rule"],
+    "metadata": { "scenarioType": "misconception_targeted" }
+  }
+]

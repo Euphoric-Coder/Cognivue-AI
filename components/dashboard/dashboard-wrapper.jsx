@@ -6,15 +6,22 @@ import { api } from "@/convex/_generated/api";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BrainCircuit, LayoutDashboard, Settings, Library, BookOpen } from "lucide-react";
+import { BrainCircuit, LayoutDashboard, Settings, Library, BookOpen, FlaskConical } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button, buttonVariants } from "@/components/ui/button";
 
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Menu } from "lucide-react";
 
+const SHOW_EVAL_NAV =
+  process.env.NODE_ENV !== "production" ||
+  process.env.NEXT_PUBLIC_ENABLE_EVAL_DASHBOARD === "true";
+
 const NAV_ITEMS = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+  ...(SHOW_EVAL_NAV
+    ? [{ name: "Evaluations", href: "/dashboard/evaluations", icon: FlaskConical }]
+    : []),
   { name: "Settings", href: "/dashboard/settings", icon: Settings },
 ];
 

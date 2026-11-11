@@ -1,0 +1,39 @@
+{
+  "datasetVersion": "cognivue-eval-v1",
+  "description": "Isolated versioned benchmark dataset for Cognivue AI V11 Evaluation & Benchmarking",
+  "createdAt": "2026-11-12",
+  "categories": [
+    "rag",
+    "multimodal",
+    "knowledge_graph",
+    "assessment",
+    "grading",
+    "learner_model",
+    "adaptive_tutor",
+    "study_intelligence",
+    "security"
+  ],
+  "quickSuiteCaseIds": [
+    "rag-001",
+    "rag-003",
+    "rag-005",
+    "mm-001",
+    "mm-003",
+    "kg-001",
+    "kg-003",
+    "as-001",
+    "as-004",
+    "gr-001",
+    "gr-004",
+    "gr-006",
+    "lm-001",
+    "lm-003",
+    "at-001",
+    "at-004",
+    "si-001",
+    "si-004",
+    "sec-001",
+    "sec-003"
+  ]
+}
+

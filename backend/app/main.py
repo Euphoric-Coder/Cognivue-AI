@@ -1,8 +1,8 @@
 from fastapi import FastAPI, Depends, HTTPException, Header
 from fastapi.middleware.cors import CORSMiddleware
-from app.api import ingestion, tutor, knowledge_graph, assessment, learner_model, study_intelligence
+from app.api import ingestion, tutor, knowledge_graph, assessment, learner_model, study_intelligence, evaluation
 
-app = FastAPI(title="Cognivue AI Backend", version="10.0.0")
+app = FastAPI(title="Cognivue AI Backend", version="11.0.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -18,6 +18,7 @@ app.include_router(knowledge_graph.router, prefix="/api/knowledge-graph", tags=[
 app.include_router(assessment.router, prefix="/api/assessment", tags=["Assessment"])
 app.include_router(learner_model.router, prefix="/api/learner-model", tags=["Learner Model"])
 app.include_router(study_intelligence.router, prefix="/api/study-intelligence", tags=["Study Intelligence"])
+app.include_router(evaluation.router, prefix="/api/evaluation", tags=["Evaluation & Benchmarking"])
 
 @app.get("/api/health")
 async def health_check():

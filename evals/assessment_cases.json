@@ -1,0 +1,156 @@
+[
+  {
+    "caseId": "as-001",
+    "category": "assessment",
+    "input": {
+      "scenarioType": "all_question_types_validity",
+      "questions": [
+        {
+          "questionType": "mcq",
+          "questionText": "According to the Chain Rule, what is the derivative of f(g(x))?",
+          "options": ["f'(g(x)) * g'(x)", "f'(x) + g'(x)", "f(g'(x)) / g(x)", "g(f'(x)) - f(x)"],
+          "correctAnswer": "f'(g(x)) * g'(x)",
+          "explanation": "Chain Rule differentiates the outer function evaluated at g(x) and multiplies by g'(x).",
+          "conceptIds": ["con_chain_rule"],
+          "evidenceItems": [{ "excerpt": "The Chain Rule states that the derivative of a composite function f(g(x)) is f'(g(x)) * g'(x), multiplying the outer derivative evaluated at g(x) by g'(x).", "sourceId": "src_pdf_calculus" }]
+        },
+        {
+          "questionType": "multiple_select",
+          "questionText": "Which statements describe Backpropagation and Gradient Clipping in Lecture 04?",
+          "options": ["Each gate multiplies upstream gradient by local derivative", "Gradient clipping rescales gradients exceeding L2 norm tau = 1.0", "Sigmoid derivative is always 1.0 for negative values", "Adam requires zero moment state"],
+          "correctAnswer": ["Each gate multiplies upstream gradient by local derivative", "Gradient clipping rescales gradients exceeding L2 norm tau = 1.0"],
+          "explanation": "Backpropagation routes local gradients and clipping bounds L2 norm above tau = 1.0.",
+          "conceptIds": ["con_backprop", "con_clipping"],
+          "evidenceItems": [{ "excerpt": "backpropagation applies the Chain Rule backward from the loss node: each gate multiplies its upstream gradient by its local derivative. norm-based gradient clipping with threshold tau = 1.0 rescales gradient vector L2 norm.", "sourceId": "src_video_backprop" }]
+        },
+        {
+          "questionType": "true_false",
+          "questionText": "True or False: The derivative of ReLU f(x) = max(0, x) for positive inputs is 1.",
+          "options": ["True", "False"],
+          "correctAnswer": "True",
+          "explanation": "Slide 8 defines ReLU as max(0, x) whose positive slope is constantly 1.",
+          "conceptIds": ["con_relu"],
+          "evidenceItems": [{ "excerpt": "The Rectified Linear Unit (ReLU) is defined as f(x) = max(0, x). For positive inputs its derivative is constantly 1.", "sourceId": "src_pptx_ml" }]
+        },
+        {
+          "questionType": "short_answer",
+          "questionText": "Why do vanishing gradients occur when deep networks repeatedly apply sigmoid activations?",
+          "correctAnswer": "Repeated multiplication of small sigmoid derivatives (< 0.25) causes early-layer gradients to shrink exponentially toward zero.",
+          "explanation": "Slide 4 notes small derivatives shrink exponentially across layers.",
+          "conceptIds": ["con_vanishing"],
+          "evidenceItems": [{ "excerpt": "During deep network training with sigmoid activations, repeated multiplication of small derivatives (< 0.25) causes gradients in early layers to shrink exponentially toward zero.", "sourceId": "src_pptx_ml" }]
+        },
+        {
+          "questionType": "numerical",
+          "questionText": "What gradient clipping L2 norm threshold tau is specified in Lecture 04?",
+          "correctAnswer": 1.0,
+          "tolerance": 0.05,
+          "explanation": "Lecture 04 specifies gradient clipping with threshold tau = 1.0.",
+          "conceptIds": ["con_clipping"],
+          "evidenceItems": [{ "excerpt": "norm-based gradient clipping with threshold tau = 1.0", "sourceId": "src_video_backprop" }]
+        },
+        {
+          "questionType": "scenario_based",
+          "questionText": "During training, your gradient descent loss diverges sharply with learning rate alpha = 1.5. Based on the chart and notes, what is the likely cause?",
+          "correctAnswer": "Learning rate alpha = 1.5 is too large, causing optimization steps to overshoot and diverge instead of converging smoothly like alpha = 0.01.",
+          "explanation": "Both page 9 notes and slide 11 chart confirm large alpha causes divergence.",
+          "conceptIds": ["con_grad_descent"],
+          "evidenceItems": [{ "excerpt": "If alpha is too large, optimization may diverge. alpha=0.01 converging smoothly downward, while alpha=1.5 oscillates sharply upward indicating divergence.", "sourceId": "src_pptx_ml" }]
+        },
+        {
+          "questionType": "diagram_based",
+          "questionText": "In the Lecture 04 computational graph diagram for z = x * y, what gradient reaches input x?",
+          "correctAnswer": "y * dL/dz",
+          "sourceVisualId": "vis_kf_compgraph_01",
+          "explanation": "The multiplication gate routes y * dL/dz to x.",
+          "conceptIds": ["con_backprop"],
+          "evidenceItems": [{ "excerpt": "Keyframe Diagram at 13:00 showing multiplication gate z = x * y receiving upstream gradient dL/dz and routing x * dL/dz to y and y * dL/dz to x.", "sourceId": "src_video_backprop", "sourceVisualId": "vis_kf_compgraph_01" }]
+        },
+        {
+          "questionType": "concept_explanation",
+          "questionText": "Explain how Composite Functions relate to applying the Chain Rule in backpropagation.",
+          "correctAnswer": "A composite function f(g(x)) applies an inner function g first; the Chain Rule gives derivative f'(g(x)) * g'(x), and backpropagation applies the Chain Rule backward from the loss node.",
+          "explanation": "Links composite functions (page 2), Chain Rule (page 5), and Lecture 04 backpropagation.",
+          "conceptIds": ["con_composite", "con_chain_rule"],
+          "evidenceItems": [{ "excerpt": "A composite function f(g(x)) applies an inner function g first and passes its output into an outer function f. The Chain Rule states that the derivative of a composite function f(g(x)) is f'(g(x)) * g'(x). Backpropagation applies the Chain Rule backward from the loss node.", "sourceId": "src_pdf_calculus" }]
+        }
+      ]
+    },
+    "expectedBehavior": {
+      "expectedValidCount": 8,
+      "requiredQuestionTypes": ["mcq", "multiple_select", "true_false", "short_answer", "numerical", "scenario_based", "diagram_based", "concept_explanation"]
+    },
+    "expectedEvidence": [{ "chunkId": "chk_calc_02" }, { "chunkId": "chk_pptx_01" }],
+    "expectedConcepts": ["Chain Rule", "Backpropagation", "Gradient Descent"],
+    "metadata": { "scenarioType": "question_validator_8_types" }
+  },
+  {
+    "caseId": "as-002",
+    "category": "assessment",
+    "input": {
+      "scenarioType": "mcq_ambiguity_and_all_above_rejection",
+      "badQuestion": {
+        "questionType": "mcq",
+        "questionText": "Which option describes a composite function f(g(x))?",
+        "options": [
+          "applies an inner function g first and passes its output into an outer function f",
+          "All of the above",
+          "Unrelated matrix inversion rule",
+          "Divides output by constant bias"
+        ],
+        "correctAnswer": "applies an inner function g first and passes its output into an outer function f",
+        "explanation": "From Calculus notes page 2.",
+        "conceptIds": ["con_composite"],
+        "evidenceItems": [{ "excerpt": "A composite function f(g(x)) applies an inner function g first and passes its output into an outer function f.", "sourceId": "src_pdf_calculus" }]
+      }
+    },
+    "expectedBehavior": {
+      "mustRejectQuestion": true,
+      "expectedReasonSubstring": "All of the above"
+    },
+    "expectedEvidence": [{ "chunkId": "chk_calc_01" }],
+    "expectedConcepts": ["Composite Functions"],
+    "metadata": { "scenarioType": "mcq_distractor_quality" }
+  },
+  {
+    "caseId": "as-003",
+    "category": "assessment",
+    "input": {
+      "scenarioType": "duplicate_detection",
+      "existing": [
+        {
+          "questionText": "What does the Chain Rule state for the derivative of a composite function f(g(x))?",
+          "correctAnswer": "f'(g(x)) * g'(x)",
+          "conceptIds": ["con_chain_rule"]
+        }
+      ],
+      "candidate": {
+        "questionText": "For a composite function f(g(x)), what does the Chain Rule state the derivative is?",
+        "correctAnswer": "f'(g(x)) * g'(x)",
+        "conceptIds": ["con_chain_rule"]
+      }
+    },
+    "expectedBehavior": {
+      "mustDetectDuplicate": true
+    },
+    "expectedEvidence": [{ "chunkId": "chk_calc_02" }],
+    "expectedConcepts": ["Chain Rule"],
+    "metadata": { "scenarioType": "duplicate_question_guard" }
+  },
+  {
+    "caseId": "as-004",
+    "category": "assessment",
+    "input": {
+      "scenarioType": "insufficient_evidence_capacity_refusal",
+      "activeConcepts": [],
+      "conceptEvidenceMap": {},
+      "requestedCount": 5
+    },
+    "expectedBehavior": {
+      "sufficientEvidence": false
+    },
+    "expectedEvidence": [],
+    "expectedConcepts": [],
+    "metadata": { "scenarioType": "insufficient_evidence_refusal" }
+  }
+]
