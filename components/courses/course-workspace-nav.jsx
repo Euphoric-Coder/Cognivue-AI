@@ -20,11 +20,12 @@ import { api } from "@/convex/_generated/api";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Menu } from "lucide-react";
 
-function NavLinks({ items, pathname }) {
+function NavLinks({ items, pathname, courseId }) {
   return (
     <nav className="flex-1 space-y-1 px-3">
       {items.map((item) => {
-        const isActive = pathname === item.href;
+        const isOverview = item.href === `/dashboard/courses/${courseId}`;
+        const isActive = isOverview ? pathname === item.href : pathname.startsWith(item.href);
         const Icon = item.icon;
         return (
           <Link key={item.href} href={item.href}>
@@ -77,7 +78,7 @@ export function CourseWorkspaceNav({ courseId }) {
                 {course ? course.name : "Loading..."}
               </h2>
             </div>
-            <NavLinks items={navItems} pathname={pathname} />
+            <NavLinks items={navItems} pathname={pathname} courseId={courseId} />
           </SheetContent>
         </Sheet>
         <h2 className="font-semibold text-sm line-clamp-1 flex-1">
@@ -102,7 +103,7 @@ export function CourseWorkspaceNav({ courseId }) {
           )}
         </div>
         
-        <NavLinks items={navItems} pathname={pathname} />
+        <NavLinks items={navItems} pathname={pathname} courseId={courseId} />
       </div>
     </>
   );

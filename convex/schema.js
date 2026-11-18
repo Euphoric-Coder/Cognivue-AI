@@ -31,11 +31,15 @@ export default defineSchema({
     graphGeneratedAt: v.optional(v.number()),
     sourceSnapshotHash: v.optional(v.string()),
 
+    // V12 Demo Course Flag
+    isDemo: v.optional(v.boolean()),
+
     createdAt: v.number(),
     updatedAt: v.number(),
   })
     .index("by_user", ["userId"])
-    .index("by_user_status", ["userId", "status"]),
+    .index("by_user_status", ["userId", "status"])
+    .index("by_user_demo", ["userId", "isDemo"]),
 
   sources: defineTable({
     courseId: v.id("courses"),
